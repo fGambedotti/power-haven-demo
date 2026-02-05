@@ -1,0 +1,14 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type":"Feature","properties":{"name":"Scotland North","demand":0.32},"geometry":{"type":"Polygon","coordinates":[[[-5.8,58.7],[-1.2,58.7],[-1.2,57.4],[-5.8,57.4],[-5.8,58.7]]]}},
+    {"type":"Feature","properties":{"name":"Scotland South","demand":0.44},"geometry":{"type":"Polygon","coordinates":[[[-5.6,57.4],[-1.8,57.4],[-1.8,55.9],[-5.6,55.9],[-5.6,57.4]]]}},
+    {"type":"Feature","properties":{"name":"North West","demand":0.58},"geometry":{"type":"Polygon","coordinates":[[[-4.5,55.9],[-2.1,55.9],[-2.1,54.4],[-4.5,54.4],[-4.5,55.9]]]}},
+    {"type":"Feature","properties":{"name":"North East","demand":0.52},"geometry":{"type":"Polygon","coordinates":[[[-2.1,55.9],[0.4,55.9],[0.4,54.4],[-2.1,54.4],[-2.1,55.9]]]}},
+    {"type":"Feature","properties":{"name":"Midlands","demand":0.7},"geometry":{"type":"Polygon","coordinates":[[[-3.5,54.4],[-0.2,54.4],[-0.2,52.6],[-3.5,52.6],[-3.5,54.4]]]}},
+    {"type":"Feature","properties":{"name":"Wales","demand":0.46},"geometry":{"type":"Polygon","coordinates":[[[-5.4,52.6],[-2.7,52.6],[-2.7,51.4],[-5.4,51.4],[-5.4,52.6]]]}},
+    {"type":"Feature","properties":{"name":"East England","demand":0.66},"geometry":{"type":"Polygon","coordinates":[[[-0.2,54.0],[1.8,54.0],[1.8,52.0],[-0.2,52.0],[-0.2,54.0]]]}},
+    {"type":"Feature","properties":{"name":"South West","demand":0.5},"geometry":{"type":"Polygon","coordinates":[[[-5.9,51.4],[-2.7,51.4],[-2.7,50.2],[-5.9,50.2],[-5.9,51.4]]]}},
+    {"type":"Feature","properties":{"name":"South East","demand":0.82},"geometry":{"type":"Polygon","coordinates":[[[-2.7,52.0],[1.9,52.0],[1.9,50.2],[-2.7,50.2],[-2.7,52.0]]]}}
+  ]
+}
