@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import clsx from "clsx";
 import MapView from "./MapView";
 import regions from "../../data/uk_regions.json";
 import corridors from "../../data/transmission_lines.json";
@@ -8,9 +9,9 @@ import generationSites from "../../data/generation_sites.json";
 import datacentres from "../../data/datacentres.json";
 import demandProfiles from "../../data/demand_profiles.json";
 import { useSimulation } from "../lib/useSimulation";
-import clsx from "clsx";
 
 const tabs = ["Datacentre", "Dispatch", "Settings"] as const;
+
 type GenerationSiteRecord = {
   id: string;
   name: string;
@@ -64,63 +65,106 @@ export default function Dashboard() {
   }, [selectedDc, dispatchPulse, state.activeDispatch]);
 
   const backupAtRisk = state.powerMw > 0 && state.socPct <= state.reservePct + 1;
+  const nowHour = Math.floor(state.timeSeconds / 3600) % 24;
+  const currentDemand = demandProfiles.today[nowHour] ?? 0;
 
   return (
-    <main className="mx-auto grid w-full max-w-7xl gap-6 px-6 py-6 lg:grid-cols-[1.4fr_0.9fr]">
-      <section className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard title="SoC" value={`${state.socPct.toFixed(1)}%`} sub={`Reserve ${state.reservePct}%`} />
-          <KpiCard title="Power" value={`${state.powerMw.toFixed(1)} MW`} sub="Dispatch output" />
-          <KpiCard title="Reserved backup" value={`${flex.reservedBackupPct.toFixed(0)}%`} sub="Protected energy" />
-          <KpiCard title="Available flexibility" value={`${flex.availableFlexMw.toFixed(0)} MW`} sub="Headroom now" />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <KpiCard title="Today’s revenue" value={`£${state.todayRevenue.toFixed(0)}`} sub="Simulated" highlight />
-          <KpiCard title="Active service" value={state.activeService ?? "Standby"} sub="NESO instruction" />
-        </div>
-
-        <div className="flex items-center justify-between rounded-2xl border border-slate/10 bg-white px-6 py-4 shadow-card">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-slate/60">Backup Status</p>
-            <p className="font-display text-2xl text-ink">Reserve protection is enforced</p>
+    <main className="mx-auto grid w-full max-w-[1440px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.5fr_0.9fr] lg:px-8">
+      <section className="space-y-6">
+        <div className="panel p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Live Demonstration</p>
+              <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+                NESO dispatch to datacentre battery flexibility
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm text-slate-600">
+                Simulation shows dispatch routing, corridor impact, reserve enforcement, and fail-safe behavior for
+                backup protection.
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-right">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Sim Time</p>
+              <p className="font-display text-lg font-semibold text-slate-900">T+{state.timeSeconds}s</p>
+            </div>
           </div>
-          <span
-            className={clsx(
-              "rounded-full px-4 py-2 text-sm font-semibold",
-              backupAtRisk ? "bg-coral/20 text-coral" : "bg-emerald/15 text-emerald",
-              !backupAtRisk && "badge-pulse"
-            )}
-          >
-            {backupAtRisk ? "BACKUP: AT RISK" : "BACKUP: PROTECTED"}
-          </span>
         </div>
 
-        <MapView
-          regions={regions as GeoJSON.FeatureCollection}
-          corridors={corridors as GeoJSON.FeatureCollection}
-          datacentres={datacentres}
-          generationSites={generationSites as GenerationSiteRecord[]}
-          selectedDatacentreId={selectedId}
-          highlightedCorridors={highlightedCorridors}
-          dispatchLine={dispatchLine}
-          onSelectDatacentre={setSelectedId}
-        />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <MetricCard title="State of Charge" value={`${state.socPct.toFixed(1)}%`} note={`Reserve floor ${state.reservePct}%`} />
+          <MetricCard title="Battery Power" value={`${state.powerMw.toFixed(1)} MW`} note="Positive = discharge" />
+          <MetricCard title="Available Flex" value={`${flex.availableFlexMw.toFixed(1)} MW`} note="Constraint-adjusted" />
+          <MetricCard title="Backup Reserved" value={`${flex.reservedBackupPct.toFixed(0)}%`} note="Auto-lock in fail-safe" />
+          <MetricCard title="Active Service" value={state.activeService ?? "Standby"} note="NESO service route" />
+          <MetricCard title="Today Revenue" value={formatCurrency(state.todayRevenue)} note="Simulated settlement" tone="accent" />
+        </div>
 
-        <div className="rounded-xl border border-slate/10 bg-white px-4 py-2 text-xs text-slate/70">
-          Illustrative simulation for demonstration — not an operational control system.
+        <div className="panel p-5 sm:p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">System Safety</p>
+              <p className="font-display text-xl font-semibold text-slate-900">Backup integrity state</p>
+            </div>
+            <span
+              className={clsx(
+                "rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.14em]",
+                backupAtRisk ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700 badge-pulse"
+              )}
+            >
+              {backupAtRisk ? "Backup At Risk" : "Backup Protected"}
+            </span>
+          </div>
+          <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-3">
+            <StatusPill label="Grid" value={state.gridStatus === "OK" ? "Normal" : "Failed"} ok={state.gridStatus === "OK"} />
+            <StatusPill label="Control Link" value={state.controlLinkOk ? "Connected" : "Lost"} ok={state.controlLinkOk} />
+            <StatusPill label="Load Spike" value={`${state.loadSpikeMw.toFixed(1)} MW`} ok={state.loadSpikeMw <= state.loadSpikeThresholdMw} />
+          </div>
+        </div>
+
+        <div className="panel overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Network View</p>
+              <p className="font-display text-lg font-semibold text-slate-900">UK demand, corridors, and assets</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+              <LegendDot color="bg-blue-500" label="Demand intensity" />
+              <LegendDot color="bg-cyan-500" label="Active corridor" />
+              <LegendDot color="bg-emerald-500" label="Renewable" />
+              <LegendDot color="bg-orange-500" label="Non-renewable" />
+              <LegendDot color="bg-slate-900" label="Datacentre" />
+            </div>
+          </div>
+          <div className="p-4 sm:p-6">
+            <MapView
+              regions={regions as GeoJSON.FeatureCollection}
+              corridors={corridors as GeoJSON.FeatureCollection}
+              datacentres={datacentres}
+              generationSites={generationSites as GenerationSiteRecord[]}
+              selectedDatacentreId={selectedId}
+              highlightedCorridors={highlightedCorridors}
+              dispatchLine={dispatchLine}
+              onSelectDatacentre={setSelectedId}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
+          Illustrative simulation for demonstration only. Not an operational control system.
         </div>
       </section>
 
-      <aside className="flex flex-col gap-4">
-        <div className="rounded-3xl border border-slate/10 bg-white p-5 shadow-card">
-          <div className="flex gap-2">
+      <aside className="space-y-6">
+        <div className="panel p-5 sm:p-6">
+          <div className="mb-4 flex flex-wrap gap-2">
             {tabs.map((tab) => (
               <button
                 key={tab}
                 className={clsx(
-                  "rounded-full px-4 py-2 text-sm font-semibold",
-                  tab === activeTab ? "bg-ink text-white" : "bg-mist text-slate"
+                  "rounded-lg px-4 py-2 text-sm font-semibold transition",
+                  tab === activeTab
+                    ? "bg-slate-900 text-white shadow-md"
+                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 )}
                 onClick={() => setActiveTab(tab)}
               >
@@ -130,10 +174,10 @@ export default function Dashboard() {
           </div>
 
           {activeTab === "Datacentre" && (
-            <div className="mt-5 space-y-4">
-              <label className="text-xs uppercase tracking-[0.3em] text-slate/60">Selected site</label>
+            <div className="space-y-4">
+              <FieldLabel text="Selected Datacentre" />
               <select
-                className="w-full rounded-xl border border-slate/20 px-4 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400"
                 value={selectedId ?? ""}
                 onChange={(event) => setSelectedId(event.target.value)}
               >
@@ -145,26 +189,14 @@ export default function Dashboard() {
               </select>
 
               {selectedDc && (
-                <div className="rounded-2xl bg-mist px-4 py-4">
-                  <p className="text-sm font-semibold text-ink">{selectedDc.name}</p>
-                  <p className="text-xs text-slate/70">{selectedDc.region}</p>
-                  <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.3em]">Battery</p>
-                      <p>{selectedDc.batteryMw} MW / {selectedDc.batteryMwh} MWh</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.3em]">Baseline</p>
-                      <p>{selectedDc.baselineLoadMw} MW load</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.3em]">Demand now</p>
-                      <p>{(demandProfiles.today[Math.floor(state.timeSeconds / 3600) % 24] * 100).toFixed(0)}%</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.3em]">Grid status</p>
-                      <p>{state.gridStatus === "OK" ? "Normal" : "Failed"}</p>
-                    </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="font-display text-lg font-semibold text-slate-900">{selectedDc.name}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{selectedDc.region}</p>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <DataChip label="Battery" value={`${selectedDc.batteryMw} MW`} />
+                    <DataChip label="Storage" value={`${selectedDc.batteryMwh} MWh`} />
+                    <DataChip label="Baseline" value={`${selectedDc.baselineLoadMw} MW`} />
+                    <DataChip label="Demand" value={`${(currentDemand * 100).toFixed(0)}%`} />
                   </div>
                 </div>
               )}
@@ -172,107 +204,112 @@ export default function Dashboard() {
           )}
 
           {activeTab === "Dispatch" && (
-            <div className="mt-5 space-y-4">
+            <div className="space-y-4">
               <button
-                className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white shadow"
+                className={clsx(
+                  "w-full rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] text-white",
+                  state.failSafeMode
+                    ? "cursor-not-allowed bg-slate-400"
+                    : "bg-gradient-to-r from-cyan-500 to-blue-700 shadow-lg"
+                )}
                 onClick={triggerDispatch}
+                disabled={state.failSafeMode}
               >
                 Trigger NESO Dispatch
               </button>
-              <div className="text-xs text-slate/70">
-                Command flow, corridor highlight, and battery response will animate on the map.
-              </div>
 
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate/60">Event log</p>
-                <div className="mt-2 max-h-72 overflow-auto rounded-xl border border-slate/10">
-                  <table className="w-full text-xs">
-                    <thead className="bg-mist text-slate">
+              <p className="text-xs text-slate-600">
+                Dispatch animation draws the command path from NESO to the selected datacentre and highlights impacted
+                nearby transmission corridors.
+              </p>
+
+              <div className="overflow-hidden rounded-xl border border-slate-200">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-100 text-slate-600">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold">Event</th>
+                      <th className="px-3 py-2 text-left font-semibold">Service</th>
+                      <th className="px-3 py-2 text-left font-semibold">MW</th>
+                      <th className="px-3 py-2 text-left font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eventLog.length === 0 && (
                       <tr>
-                        <th className="px-3 py-2 text-left">ID</th>
-                        <th className="px-3 py-2 text-left">Service</th>
-                        <th className="px-3 py-2 text-left">Dir</th>
-                        <th className="px-3 py-2 text-left">MW</th>
-                        <th className="px-3 py-2 text-left">Status</th>
+                        <td className="px-3 py-3 text-slate-500" colSpan={4}>
+                          No dispatch events yet.
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {eventLog.length === 0 && (
-                        <tr>
-                          <td className="px-3 py-3 text-slate/60" colSpan={5}>
-                            No dispatches yet.
-                          </td>
-                        </tr>
-                      )}
-                      {eventLog.map((event) => (
-                        <tr key={event.id} className="border-t border-slate/10">
-                          <td className="px-3 py-2">{event.id}</td>
-                          <td className="px-3 py-2">{event.service}</td>
-                          <td className="px-3 py-2">{event.direction === "DISCHARGE" ? "Flex up" : "Flex down"}</td>
-                          <td className="px-3 py-2">{event.targetMw}</td>
-                          <td className="px-3 py-2">
-                            <span className={clsx("rounded-full px-2 py-1 text-[10px] font-semibold",
-                              event.status === "EXECUTED" && "bg-emerald/15 text-emerald",
-                              event.status === "REJECTED" && "bg-coral/20 text-coral",
-                              event.status === "CURTAILED" && "bg-amber-100 text-amber-700",
-                              event.status === "ABORTED" && "bg-slate/10 text-slate"
-                            )}>
-                              {event.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    )}
+                    {eventLog.map((event) => (
+                      <tr key={event.id} className="border-t border-slate-100">
+                        <td className="px-3 py-2 font-semibold text-slate-700">{event.id}</td>
+                        <td className="px-3 py-2 text-slate-600">{event.service}</td>
+                        <td className="px-3 py-2 text-slate-600">{event.targetMw}</td>
+                        <td className="px-3 py-2">
+                          <span className={statusClass(event.status)}>{event.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {activeTab === "Settings" && (
-            <div className="mt-5 space-y-4">
-              <SliderRow
+            <div className="space-y-5">
+              <RangeField
                 label="Reserve SoC"
                 value={state.reservePct}
                 min={10}
                 max={60}
-                onChange={(value) => updateSetting("reservePct", value)}
                 suffix="%"
-              />
-              <SliderRow
-                label="Load spike threshold"
-                value={state.loadSpikeThresholdMw}
-                min={selectedDc?.baselineLoadMw ?? 20}
-                max={(selectedDc?.baselineLoadMw ?? 20) * 2}
-                onChange={(value) => updateSetting("loadSpikeThresholdMw", value)}
-                suffix="MW"
+                onChange={(value) => updateSetting("reservePct", value)}
               />
 
-              <ToggleRow
+              <RangeField
+                label="Load spike threshold"
+                value={state.loadSpikeThresholdMw}
+                min={Math.max(10, selectedDc?.baselineLoadMw ?? 20)}
+                max={Math.max(40, (selectedDc?.baselineLoadMw ?? 20) * 2)}
+                suffix="MW"
+                onChange={(value) => updateSetting("loadSpikeThresholdMw", value)}
+              />
+
+              <SwitchField
                 label="Auto dispatch"
-                value={state.autoDispatch}
+                caption="Generates periodic dispatch requests automatically"
+                enabled={state.autoDispatch}
                 onToggle={(value) => updateSetting("autoDispatch", value)}
               />
-              <ToggleRow
-                label="Grid status FAILED"
-                value={state.gridStatus === "FAILED"}
+
+              <SwitchField
+                label="Grid failed"
+                caption="Immediately blocks flexibility and preserves backup"
+                enabled={state.gridStatus === "FAILED"}
                 onToggle={(value) => updateSetting("gridStatus", value ? "FAILED" : "OK")}
               />
-              <ToggleRow
+
+              <SwitchField
                 label="Control link lost"
-                value={!state.controlLinkOk}
+                caption="Fail-safe backup-only mode"
+                enabled={!state.controlLinkOk}
                 onToggle={(value) => updateSetting("controlLinkOk", !value)}
               />
             </div>
           )}
         </div>
 
-        <div className="rounded-2xl border border-slate/10 bg-white p-5 shadow-card">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate/60">Fail-safe status</p>
-          <p className="mt-2 text-sm text-ink">
+        <div className="panel p-5 sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Fail-safe Monitor</p>
+          <p className="mt-2 font-display text-lg font-semibold text-slate-900">
+            {state.failSafeMode ? "Fail-safe engaged" : "Fail-safe inactive"}
+          </p>
+          <p className="mt-2 text-sm text-slate-600">
             {state.failSafeMode
-              ? "Fail-safe engaged. Dispatch is blocked and reserve locked for backup."
-              : "Control link healthy. Dispatch is permitted within reserve constraints."}
+              ? "Dispatch is disabled. Battery reserve is preserved for backup service continuity."
+              : "Dispatch can run while reserve floor, link health, and load thresholds remain valid."}
           </p>
         </div>
       </aside>
@@ -280,67 +317,129 @@ export default function Dashboard() {
   );
 }
 
-function KpiCard({ title, value, sub, highlight }: { title: string; value: string; sub: string; highlight?: boolean }) {
+function MetricCard({
+  title,
+  value,
+  note,
+  tone = "default"
+}: {
+  title: string;
+  value: string;
+  note: string;
+  tone?: "default" | "accent";
+}) {
   return (
-    <div className={clsx("rounded-2xl border border-slate/10 bg-white p-4 shadow-card", highlight && "bg-ink text-white")}> 
-      <p className={clsx("text-xs uppercase tracking-[0.3em]", highlight ? "text-white/60" : "text-slate/60")}>{title}</p>
-      <p className={clsx("mt-2 text-2xl font-semibold", highlight ? "text-white" : "text-ink")}>{value}</p>
-      <p className={clsx("text-xs", highlight ? "text-white/70" : "text-slate/70")}>{sub}</p>
+    <div className={clsx("metric-tile p-4", tone === "accent" && "bg-gradient-to-r from-cyan-50 to-blue-50")}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">{title}</p>
+      <p className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900">{value}</p>
+      <p className="mt-1 text-xs text-slate-500">{note}</p>
     </div>
   );
 }
 
-function SliderRow({
+function StatusPill({ label, value, ok }: { label: string; value: string; ok: boolean }) {
+  return (
+    <div className={clsx("rounded-xl border px-3 py-2", ok ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50")}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className={clsx("font-semibold", ok ? "text-emerald-700" : "text-rose-700")}>{value}</p>
+    </div>
+  );
+}
+
+function FieldLabel({ text }: { text: string }) {
+  return <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">{text}</p>;
+}
+
+function DataChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-2">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="font-semibold text-slate-700">{value}</p>
+    </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={clsx("h-2.5 w-2.5 rounded-full", color)} />
+      {label}
+    </span>
+  );
+}
+
+function RangeField({
   label,
   value,
   min,
   max,
-  onChange,
-  suffix
+  suffix,
+  onChange
 }: {
   label: string;
   value: number;
   min: number;
   max: number;
-  onChange: (value: number) => void;
   suffix: string;
+  onChange: (value: number) => void;
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-slate">{label}</span>
-        <span className="font-semibold text-ink">{value.toFixed(0)} {suffix}</span>
+      <div className="mb-2 flex items-center justify-between text-sm">
+        <span className="font-medium text-slate-700">{label}</span>
+        <span className="font-semibold text-slate-900">{value.toFixed(0)} {suffix}</span>
       </div>
       <input
         type="range"
+        className="w-full accent-blue-600"
         min={min}
         max={max}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-2 w-full"
       />
     </div>
   );
 }
 
-function ToggleRow({ label, value, onToggle }: { label: string; value: boolean; onToggle: (value: boolean) => void }) {
+function SwitchField({
+  label,
+  caption,
+  enabled,
+  onToggle
+}: {
+  label: string;
+  caption: string;
+  enabled: boolean;
+  onToggle: (value: boolean) => void;
+}) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-slate">{label}</span>
-      <button
-        className={clsx(
-          "h-7 w-14 rounded-full p-1 transition",
-          value ? "bg-emerald" : "bg-slate/20"
-        )}
-        onClick={() => onToggle(!value)}
-      >
-        <span
-          className={clsx(
-            "block h-5 w-5 rounded-full bg-white shadow",
-            value ? "translate-x-7" : "translate-x-0"
-          )}
-        />
-      </button>
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-800">{label}</p>
+          <p className="text-xs text-slate-500">{caption}</p>
+        </div>
+        <button
+          className={clsx("h-7 w-14 rounded-full p-1 transition", enabled ? "bg-blue-600" : "bg-slate-300")}
+          onClick={() => onToggle(!enabled)}
+        >
+          <span className={clsx("block h-5 w-5 rounded-full bg-white transition", enabled ? "translate-x-7" : "translate-x-0")} />
+        </button>
+      </div>
     </div>
   );
+}
+
+function statusClass(status: string) {
+  return clsx(
+    "rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]",
+    status === "EXECUTED" && "bg-emerald-100 text-emerald-700",
+    status === "REJECTED" && "bg-rose-100 text-rose-700",
+    status === "CURTAILED" && "bg-amber-100 text-amber-700",
+    status === "ABORTED" && "bg-slate-200 text-slate-700"
+  );
+}
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(amount);
 }

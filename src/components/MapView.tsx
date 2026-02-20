@@ -84,7 +84,7 @@ export default function MapView({
           {
             id: "background",
             type: "background",
-            paint: { "background-color": "#f4f6fa" }
+            paint: { "background-color": "#eef3f9" }
           }
         ]
       },
@@ -109,7 +109,7 @@ export default function MapView({
             ["linear"],
             ["get", "demand"],
             0.3,
-            "#dbeafe",
+            "#c4ddff",
             0.5,
             "#93c5fd",
             0.7,
@@ -117,7 +117,7 @@ export default function MapView({
             0.9,
             "#2563eb"
           ],
-          "fill-opacity": 0.65
+          "fill-opacity": 0.7
         }
       });
       map.addLayer({
@@ -125,9 +125,9 @@ export default function MapView({
         type: "line",
         source: "regions",
         paint: {
-          "line-color": "#1e293b",
-          "line-width": 0.8,
-          "line-opacity": 0.35
+          "line-color": "#334155",
+          "line-width": 1,
+          "line-opacity": 0.45
         }
       });
 
@@ -138,8 +138,8 @@ export default function MapView({
         source: "corridors",
         paint: {
           "line-color": "#64748b",
-          "line-width": 2.5,
-          "line-opacity": 0.4
+          "line-width": 2,
+          "line-opacity": 0.36
         }
       });
 
@@ -149,8 +149,8 @@ export default function MapView({
         source: "corridors",
         paint: {
           "line-color": "#0ea5e9",
-          "line-width": 4,
-          "line-opacity": 0.85
+          "line-width": 4.5,
+          "line-opacity": 0.9
         },
         filter: ["in", ["get", "id"], ["literal", []]]
       });
@@ -161,16 +161,10 @@ export default function MapView({
         type: "circle",
         source: "generation",
         paint: {
-          "circle-radius": 5,
-          "circle-color": [
-            "match",
-            ["get", "type"],
-            "renewable",
-            "#10b981",
-            "#f97316"
-          ],
+          "circle-radius": 4.5,
+          "circle-color": ["match", ["get", "type"], "renewable", "#10b981", "#f97316"],
           "circle-stroke-color": "#0f172a",
-          "circle-stroke-width": 1
+          "circle-stroke-width": 0.8
         }
       });
 
@@ -182,7 +176,7 @@ export default function MapView({
         paint: {
           "circle-radius": 7,
           "circle-color": "#0f172a",
-          "circle-stroke-color": "#38bdf8",
+          "circle-stroke-color": "#67e8f9",
           "circle-stroke-width": 2
         }
       });
@@ -192,9 +186,11 @@ export default function MapView({
         type: "circle",
         source: "datacentres",
         paint: {
-          "circle-radius": 10,
+          "circle-radius": 11,
           "circle-color": "#38bdf8",
-          "circle-opacity": 0.85
+          "circle-opacity": 0.28,
+          "circle-stroke-color": "#0ea5e9",
+          "circle-stroke-width": 2
         },
         filter: ["==", ["get", "id"], selectedDatacentreId ?? ""]
       });
@@ -230,11 +226,12 @@ export default function MapView({
         source: "neso",
         layout: {
           "text-field": "NESO",
-          "text-offset": [0, 1.4],
-          "text-size": 12
+          "text-offset": [0, 1.35],
+          "text-size": 12,
+          "text-font": ["Open Sans Bold"]
         },
         paint: {
-          "text-color": "#1f2937"
+          "text-color": "#334155"
         }
       });
 
@@ -249,8 +246,8 @@ export default function MapView({
         paint: {
           "line-color": "#f59e0b",
           "line-width": 4,
-          "line-opacity": 0.9,
-          "line-dasharray": [1, 1.5]
+          "line-opacity": 0.95,
+          "line-dasharray": [1, 1.4]
         }
       });
 
@@ -269,15 +266,18 @@ export default function MapView({
     });
 
     mapRef.current = map;
-  }, [regions, corridors, datacentreGeo, generationGeo, selectedDatacentreId, dispatchLine, highlightedCorridors, onSelectDatacentre]);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [regions, corridors, datacentreGeo, generationGeo, selectedDatacentreId, dispatchLine, onSelectDatacentre]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const source = map.getSource("datacentres") as maplibregl.GeoJSONSource | undefined;
-    if (source) {
-      source.setData(datacentreGeo);
-    }
+    if (source) source.setData(datacentreGeo);
     if (map.getLayer("datacentres-selected")) {
       map.setFilter("datacentres-selected", ["==", ["get", "id"], selectedDatacentreId ?? ""]);
     }
@@ -287,9 +287,7 @@ export default function MapView({
     const map = mapRef.current;
     if (!map) return;
     const source = map.getSource("corridors") as maplibregl.GeoJSONSource | undefined;
-    if (source) {
-      source.setData(corridors);
-    }
+    if (source) source.setData(corridors);
     if (map.getLayer("corridors-highlight")) {
       map.setFilter("corridors-highlight", ["in", ["get", "id"], ["literal", highlightedCorridors]]);
     }
@@ -299,10 +297,8 @@ export default function MapView({
     const map = mapRef.current;
     if (!map) return;
     const source = map.getSource("dispatch") as maplibregl.GeoJSONSource | undefined;
-    if (source) {
-      source.setData(dispatchLine ?? { type: "FeatureCollection", features: [] });
-    }
+    if (source) source.setData(dispatchLine ?? { type: "FeatureCollection", features: [] });
   }, [dispatchLine]);
 
-  return <div className="maplibre-container rounded-3xl border border-slate/10 bg-white shadow-card" ref={containerRef} />;
+  return <div className="maplibre-container overflow-hidden rounded-2xl border border-slate-200 bg-white" ref={containerRef} />;
 }

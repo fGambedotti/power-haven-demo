@@ -1,26 +1,44 @@
 "use client";
 
 import { useMemo } from "react";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
-import clsx from "clsx";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  Bar,
+  BarChart
+} from "recharts";
 
 const dailyRevenue = Array.from({ length: 14 }).map((_, index) => ({
-  day: `Day ${index + 1}`,
-  revenue: Math.round(4200 + Math.sin(index / 2) * 900 + index * 120)
+  day: `D${index + 1}`,
+  revenue: Math.round(4300 + Math.sin(index / 2.2) * 760 + index * 135),
+  baseline: 4200 + index * 120
 }));
 
 const serviceBreakdown = [
-  { name: "Dynamic Containment", value: 62 },
-  { name: "Balancing Mechanism", value: 38 }
+  { name: "Dynamic Containment", value: 62, color: "#0284c7" },
+  { name: "Balancing Mechanism", value: 38, color: "#10b981" }
 ];
+
+const serviceDaily = dailyRevenue.map((row, index) => ({
+  day: row.day,
+  containment: Math.round(row.revenue * (0.58 + ((index % 4) - 1.5) * 0.02)),
+  balancing: Math.round(row.revenue * (0.42 - ((index % 4) - 1.5) * 0.02))
+}));
 
 const eventLogSample = [
   { id: "EV-091", service: "Dynamic Containment", direction: "DISCHARGE", targetMw: 70, status: "EXECUTED" },
   { id: "EV-092", service: "Balancing Mechanism", direction: "CHARGE", targetMw: 55, status: "CURTAILED" },
   { id: "EV-093", service: "Dynamic Containment", direction: "DISCHARGE", targetMw: 60, status: "EXECUTED" }
 ];
-
-const COLORS = ["#2563eb", "#10b981"];
 
 function downloadCsv(filename: string, rows: Record<string, string | number>[]) {
   const headers = Object.keys(rows[0] ?? {});
@@ -37,94 +55,134 @@ function downloadCsv(filename: string, rows: Record<string, string | number>[]) 
   URL.revokeObjectURL(url);
 }
 
+function money(n: number) {
+  return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
+}
+
 export default function RevenuePage() {
   const total = useMemo(() => dailyRevenue.reduce((sum, row) => sum + row.revenue, 0), []);
+  const mean = useMemo(() => total / dailyRevenue.length, [total]);
+  const peak = useMemo(() => Math.max(...dailyRevenue.map((d) => d.revenue)), []);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-6">
-      <div className="rounded-3xl border border-slate/10 bg-white p-6 shadow-card">
-        <div className="flex items-center justify-between">
+    <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <section className="panel p-5 sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate/60">Revenue & Reporting</p>
-            <h1 className="mt-2 font-display text-3xl text-ink">Dispatch revenue performance</h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Revenue & Reporting</p>
+            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-900">Dispatch value analytics</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600">
+              Simulated settlement performance across grid services with export-ready reporting outputs.
+            </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate/60">14-day total</p>
-            <p className="text-2xl font-semibold text-ink">£{total.toLocaleString()}</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <Metric label="14-day total" value={money(total)} />
+            <Metric label="Daily mean" value={money(mean)} />
+            <Metric label="Peak day" value={money(peak)} />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.45fr_0.95fr]">
+        <div className="panel p-5 sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Daily revenue trend</p>
+          <p className="mb-4 mt-1 text-sm text-slate-600">Shaded area shows realized revenue. Dashed line indicates baseline expectation.</p>
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={dailyRevenue} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0284c7" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#0284c7" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#dbe3ef" />
+                <XAxis dataKey="day" tick={{ fill: "#64748b", fontSize: 11 }} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} tickFormatter={(v) => `£${v / 1000}k`} />
+                <Tooltip formatter={(value) => money(Number(value))} />
+                <Legend />
+                <Area type="monotone" dataKey="revenue" name="Realized" stroke="#0284c7" fill="url(#revFill)" strokeWidth={3} />
+                <Area type="monotone" dataKey="baseline" name="Baseline" stroke="#64748b" fillOpacity={0} strokeDasharray="6 4" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <div className="rounded-2xl border border-slate/10 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate/60">Daily revenue</p>
-            <div className="mt-4 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyRevenue}>
-                  <XAxis dataKey="day" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={3} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate/10 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate/60">Service mix</p>
-            <div className="mt-4 h-64">
+        <div className="space-y-6">
+          <div className="panel p-5 sm:p-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Service mix</p>
+            <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={serviceBreakdown} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80}>
-                    {serviceBreakdown.map((entry, index) => (
-                      <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                  <Pie data={serviceBreakdown} dataKey="value" nameKey="name" innerRadius={52} outerRadius={82}>
+                    {serviceBreakdown.map((slice) => (
+                      <Cell key={slice.name} fill={slice.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(value) => `${value}%`} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 space-y-2 text-sm">
-              {serviceBreakdown.map((service, index) => (
-                <div key={service.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index] }} />
-                    <span>{service.name}</span>
-                  </div>
-                  <span className="font-semibold text-ink">{service.value}%</span>
+            <div className="space-y-2 text-sm">
+              {serviceBreakdown.map((service) => (
+                <div key={service.name} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                  <span className="inline-flex items-center gap-2 font-medium text-slate-700">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: service.color }} />
+                    {service.name}
+                  </span>
+                  <span className="font-bold text-slate-900">{service.value}%</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate/10 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate/60">Export data</p>
-            <div className="mt-3 flex flex-wrap gap-3">
+          <div className="panel p-5 sm:p-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Export</p>
+            <p className="mt-1 text-sm text-slate-600">Download reporting snapshots for meetings and diligence packs.</p>
+            <div className="mt-4 flex flex-wrap gap-3">
               <button
-                className={clsx("rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white")}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-white"
                 onClick={() => downloadCsv("power-haven-event-log.csv", eventLogSample)}
               >
-                Export event log CSV
+                Event log CSV
               </button>
               <button
-                className={clsx("rounded-full border border-ink px-4 py-2 text-xs font-semibold text-ink")}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-700"
                 onClick={() => downloadCsv("power-haven-revenue-summary.csv", dailyRevenue)}
               >
-                Export revenue summary CSV
+                Revenue CSV
               </button>
             </div>
           </div>
-
-          <div className="rounded-2xl border border-slate/10 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate/60">Notes</p>
-            <p className="mt-2 text-sm text-slate">
-              Revenue series and service breakdown are simulated for demo purposes. Exported CSVs include
-              the current snapshot used in this view.
-            </p>
-          </div>
         </div>
-      </div>
+      </section>
+
+      <section className="panel p-5 sm:p-6">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Daily service contribution</p>
+        <p className="mb-4 mt-1 text-sm text-slate-600">Shows estimated revenue share by service each day for performance transparency.</p>
+        <div className="h-[280px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={serviceDaily}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#dbe3ef" />
+              <XAxis dataKey="day" tick={{ fill: "#64748b", fontSize: 11 }} />
+              <YAxis tick={{ fill: "#64748b", fontSize: 11 }} tickFormatter={(v) => `£${Math.round(v / 1000)}k`} />
+              <Tooltip formatter={(value) => money(Number(value))} />
+              <Legend />
+              <Bar dataKey="containment" name="Dynamic Containment" fill="#0284c7" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="balancing" name="Balancing Mechanism" fill="#10b981" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right">
+      <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">{label}</p>
+      <p className="font-display text-lg font-semibold text-slate-900">{value}</p>
+    </div>
   );
 }
