@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import MapView from "./MapView";
-import regions from "../../data/uk_regions.geojson";
-import corridors from "../../data/transmission_lines.geojson";
+import regions from "../../data/uk_regions.json";
+import corridors from "../../data/transmission_lines.json";
 import generationSites from "../../data/generation_sites.json";
 import datacentres from "../../data/datacentres.json";
 import demandProfiles from "../../data/demand_profiles.json";
@@ -11,6 +11,14 @@ import { useSimulation } from "../lib/useSimulation";
 import clsx from "clsx";
 
 const tabs = ["Datacentre", "Dispatch", "Settings"] as const;
+type GenerationSiteRecord = {
+  id: string;
+  name: string;
+  type: "renewable" | "non-renewable";
+  capacityMw: number;
+  lat: number;
+  lon: number;
+};
 
 export default function Dashboard() {
   const {
@@ -92,7 +100,7 @@ export default function Dashboard() {
           regions={regions as GeoJSON.FeatureCollection}
           corridors={corridors as GeoJSON.FeatureCollection}
           datacentres={datacentres}
-          generationSites={generationSites}
+          generationSites={generationSites as GenerationSiteRecord[]}
           selectedDatacentreId={selectedId}
           highlightedCorridors={highlightedCorridors}
           dispatchLine={dispatchLine}

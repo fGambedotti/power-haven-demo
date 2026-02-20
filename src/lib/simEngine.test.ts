@@ -15,7 +15,7 @@ describe("simEngine", () => {
       service: "Balancing Mechanism",
       direction: "DISCHARGE",
       targetMw: 40,
-      remainingSec: 60
+      remainingSec: 120
     };
     const next = tickState(state, 60).state;
     expect(next.socPct).toBeLessThan(state.socPct);
