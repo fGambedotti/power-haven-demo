@@ -17,6 +17,7 @@ import datacentres from "../../../data/datacentres.json";
 import marketSignals from "../../../data/market_signals.json";
 import weatherSites from "../../../data/weather_sites.json";
 import DecisionRationale from "../../components/DecisionRationale";
+import { PageHero, StatTile } from "../../components/ProductUI";
 
 type Site = (typeof datacentres)[number];
 
@@ -104,18 +105,11 @@ export default function ShadowModePage() {
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="panel p-5 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Shadow Mode</p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-900">
-              Demand forecasting and flex window pre-notification
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              Read-only monitoring predicts near-term datacentre demand and identifies safe flexibility windows before
-              operational dispatch integration.
-            </p>
-          </div>
+      <PageHero
+        eyebrow="Shadow Mode"
+        title="Demand forecasting and flex window pre-notification"
+        description="Read-only monitoring predicts near-term datacentre demand and identifies safe flexibility windows before operational dispatch integration."
+        right={
           <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-3 sm:w-auto">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Site under observation</p>
             <select
@@ -128,8 +122,8 @@ export default function ShadowModePage() {
               ))}
             </select>
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_1.05fr]">
         <div className="panel p-5 sm:p-6">
@@ -165,10 +159,10 @@ export default function ShadowModePage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Metric title="Forecast MAE" value={`${mae} MW`} note="Synthetic daily error" />
-        <Metric title="Flex hours (24h)" value={`${totalFlexHours} h`} note="Predicted safe windows" />
-        <Metric title="Avg flex margin" value={`${avgFlex} MW`} note="Threshold headroom" />
-        <Metric title="Next window" value={nextWindow ? formatWindow(nextWindow.start, nextWindow.end) : "None"} note={nextWindow ? `${nextWindow.avgFlexMw} MW avg` : "No window predicted"} tone="accent" />
+        <StatTile label="Forecast MAE" value={`${mae} MW`} note="Synthetic daily error" />
+        <StatTile label="Flex hours (24h)" value={`${totalFlexHours} h`} note="Predicted safe windows" />
+        <StatTile label="Avg flex margin" value={`${avgFlex} MW`} note="Threshold headroom" />
+        <StatTile label="Next window" value={nextWindow ? formatWindow(nextWindow.start, nextWindow.end) : "None"} note={nextWindow ? `${nextWindow.avgFlexMw} MW avg` : "No window predicted"} />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
@@ -295,16 +289,6 @@ export default function ShadowModePage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function Metric({ title, value, note, tone = "default" }: { title: string; value: string; note: string; tone?: "default" | "accent" }) {
-  return (
-    <div className={`metric-tile p-4 ${tone === "accent" ? "bg-gradient-to-r from-cyan-50 to-blue-50" : ""}`}>
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">{title}</p>
-      <p className="mt-2 font-display text-2xl font-semibold text-slate-900">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{note}</p>
-    </div>
   );
 }
 

@@ -17,6 +17,7 @@ import {
   BarChart
 } from "recharts";
 import marketSignals from "../../../data/market_signals.json";
+import { PageHero, StatTile } from "../../components/ProductUI";
 
 const dailyRevenue = Array.from({ length: 14 }).map((_, index) => ({
   day: `D${index + 1}`,
@@ -76,22 +77,18 @@ export default function RevenuePage() {
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="panel p-5 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Revenue & Reporting</p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-900">Dispatch value analytics</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              Simulated settlement performance across grid services with export-ready reporting outputs.
-            </p>
-          </div>
+      <PageHero
+        eyebrow="Revenue & Reporting"
+        title="Dispatch value analytics"
+        description="Simulated settlement performance across grid services with export-ready reporting outputs."
+        right={
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <Metric label="14-day total" value={money(total)} />
-            <Metric label="Daily mean" value={money(mean)} />
-            <Metric label="Peak day" value={money(peak)} />
+            <StatTile label="14-day total" value={money(total)} />
+            <StatTile label="Daily mean" value={money(mean)} />
+            <StatTile label="Peak day" value={money(peak)} />
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-6 lg:grid-cols-[1.45fr_0.95fr]">
         <div className="panel p-5 sm:p-6">
@@ -212,14 +209,5 @@ export default function RevenuePage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right">
-      <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">{label}</p>
-      <p className="font-display text-lg font-semibold text-slate-900">{value}</p>
-    </div>
   );
 }

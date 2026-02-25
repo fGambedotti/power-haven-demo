@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageHero, StatTile } from "../../components/ProductUI";
 
 const sequence = [
   {
@@ -52,22 +53,18 @@ export default function DemoModePage() {
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="panel p-5 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Demo Mode</p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-900">Guided product story (investor-ready)</h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              One coherent sequence for presenting VoltPilot from observability to orchestration to proof of value.
-            </p>
-          </div>
+      <PageHero
+        eyebrow="Demo Mode"
+        title="Guided product story (investor-ready)"
+        description="One coherent sequence for presenting VoltPilot from observability to orchestration to proof of value."
+        right={
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Metric label="Scenes" value={`${sequence.length}`} />
-            <Metric label="Run time" value={`${Math.ceil(totalTime / 60)} min`} />
-            <Metric label="Current" value={`${active + 1}/${sequence.length}`} />
+            <StatTile label="Scenes" value={`${sequence.length}`} />
+            <StatTile label="Run time" value={`${Math.ceil(totalTime / 60)} min`} />
+            <StatTile label="Current" value={`${active + 1}/${sequence.length}`} />
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.25fr]">
         <div className="panel p-5 sm:p-6">
@@ -124,14 +121,5 @@ export default function DemoModePage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right">
-      <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">{label}</p>
-      <p className="font-display text-lg font-semibold text-slate-900">{value}</p>
-    </div>
   );
 }

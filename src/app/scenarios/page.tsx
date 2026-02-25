@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageHero } from "../../components/ProductUI";
 
 const scenarios = [
   {
@@ -78,13 +79,11 @@ export default function ScenariosPage() {
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="panel p-5 sm:p-6">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Guided Replay</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-900">Deterministic demo scenarios</h1>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Presentation-safe scenario presets explain system behavior step-by-step with consistent outcomes and language.
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Guided Replay"
+        title="Deterministic demo scenarios"
+        description="Presentation-safe scenario presets explain system behavior step-by-step with consistent outcomes and language."
+      />
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr]">
         <div className="panel p-5 sm:p-6">

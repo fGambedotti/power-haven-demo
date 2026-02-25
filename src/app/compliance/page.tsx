@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { PageHero, StatTile } from "../../components/ProductUI";
 
 const auditEvents = [
   { ts: "2026-02-25T09:10:00Z", site: "London Docklands", event: "DISPATCH_REQUEST", service: "Dynamic Containment", result: "APPROVED", reason: "All constraints passed" },
@@ -39,18 +40,16 @@ export default function CompliancePage() {
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="panel p-5 sm:p-6">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Compliance & Audit</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-900">Operational trust and evidence layer</h1>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Demonstrates control policy enforcement, fail-safe outcomes, and exportable audit traces for buyer diligence conversations.
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Compliance & Audit"
+        title="Operational trust and evidence layer"
+        description="Demonstrates control policy enforcement, fail-safe outcomes, and exportable audit traces for buyer diligence conversations."
+      />
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Metric label="Audit events" value={`${summary.total}`} note="Illustrative demo snapshot" />
-        <Metric label="Approved" value={`${summary.approved}`} note="Constraints passed" />
-        <Metric label="Blocked / curtailed" value={`${summary.blocked}`} note="Safety protections engaged" />
+        <StatTile label="Audit events" value={`${summary.total}`} note="Illustrative demo snapshot" />
+        <StatTile label="Approved" value={`${summary.approved}`} note="Constraints passed" />
+        <StatTile label="Blocked / curtailed" value={`${summary.blocked}`} note="Safety protections engaged" />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.25fr]">
@@ -111,15 +110,5 @@ export default function CompliancePage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function Metric({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="metric-tile p-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 font-display text-2xl font-semibold text-slate-900">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{note}</p>
-    </div>
   );
 }

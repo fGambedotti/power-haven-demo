@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { PageHero, StatTile } from "../../components/ProductUI";
 
 export default function RoiStudioPage() {
   const [batteryMw, setBatteryMw] = useState(20);
@@ -48,14 +49,11 @@ export default function RoiStudioPage() {
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="panel p-5 sm:p-6">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">ROI Studio</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-900">With vs without VoltPilot economics</h1>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Configure a representative datacentre portfolio and compare economic outcomes with idle backup assets versus a
-          managed flexibility participation model.
-        </p>
-      </section>
+      <PageHero
+        eyebrow="ROI Studio"
+        title="With vs without VoltPilot economics"
+        description="Configure a representative datacentre portfolio and compare economic outcomes with idle backup assets versus a managed flexibility participation model."
+      />
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.25fr]">
         <div className="panel p-5 sm:p-6 space-y-5">
@@ -69,10 +67,10 @@ export default function RoiStudioPage() {
 
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric label="Usable flex/site" value={`${model.usableMwPerSite} MW`} note={`${model.usableMwhPerSite} MWh usable`} />
-            <Metric label="Gross revenue" value={money(model.annualRevenueWithVoltPilot)} note="With VoltPilot" />
-            <Metric label="Net revenue" value={money(model.netRevenueWith)} note="After illustrative fee" />
-            <Metric label="CO2 avoided" value={`${model.co2AvoidedTons} t`} note="Illustrative estimate" />
+            <StatTile label="Usable flex/site" value={`${model.usableMwPerSite} MW`} note={`${model.usableMwhPerSite} MWh usable`} />
+            <StatTile label="Gross revenue" value={money(model.annualRevenueWithVoltPilot)} note="With VoltPilot" />
+            <StatTile label="Net revenue" value={money(model.netRevenueWith)} note="After illustrative fee" />
+            <StatTile label="CO2 avoided" value={`${model.co2AvoidedTons} t`} note="Illustrative estimate" />
           </div>
 
           <div className="panel p-5 sm:p-6">
@@ -146,15 +144,6 @@ function Slider({
   );
 }
 
-function Metric({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="metric-tile p-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 font-display text-xl font-semibold text-slate-900">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{note}</p>
-    </div>
-  );
-}
 
 function OutcomeCard({ title, bullets, tone }: { title: string; bullets: string[]; tone: "muted" | "accent" }) {
   return (

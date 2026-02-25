@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import datacentres from "../../../data/datacentres.json";
 import DecisionRationale from "../../components/DecisionRationale";
+import { PageHero, StatTile } from "../../components/ProductUI";
 
 function scoreSite(dc: (typeof datacentres)[number], i: number) {
   const loadFactor = 0.78 + ((i % 7) * 0.03);
@@ -44,23 +45,16 @@ export default function PortfolioPage() {
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="panel p-5 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Portfolio Operations</p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-900">Aggregator readiness and site prioritization</h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              Portfolio-level view ranks candidate sites by forecast headroom, reserve policy, and forecast confidence to
-              support dispatch allocation decisions.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Portfolio Operations"
+        title="Aggregator readiness and site prioritization"
+        description="Portfolio-level view ranks candidate sites by forecast headroom, reserve policy, and forecast confidence to support dispatch allocation decisions."
+      />
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Metric label="Portfolio flex available" value={`${totals.portfolioFlexMw} MW`} note="Forecast-adjusted" />
-        <Metric label="Ready sites (>=70)" value={`${totals.readySites}/${sites.length}`} note="Dispatch readiness score" />
-        <Metric label="Forecast confidence" value={`${totals.weightedConfidence}%`} note="Portfolio weighted average" />
+        <StatTile label="Portfolio flex available" value={`${totals.portfolioFlexMw} MW`} note="Forecast-adjusted" />
+        <StatTile label="Ready sites (>=70)" value={`${totals.readySites}/${sites.length}`} note="Dispatch readiness score" />
+        <StatTile label="Forecast confidence" value={`${totals.weightedConfidence}%`} note="Portfolio weighted average" />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_1.2fr]">
@@ -143,15 +137,5 @@ export default function PortfolioPage() {
         ]}
       />
     </main>
-  );
-}
-
-function Metric({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="metric-tile p-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 font-display text-2xl font-semibold text-slate-900">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{note}</p>
-    </div>
   );
 }
