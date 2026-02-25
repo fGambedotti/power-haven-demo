@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { PageHero, StatTile } from "../../components/ProductUI";
+import RoleLens from "../../components/RoleLens";
 
 const sequence = [
   {
@@ -65,6 +66,8 @@ export default function DemoModePage() {
           </div>
         }
       />
+
+      <RoleLens context="demo" />
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.25fr]">
         <div className="panel p-5 sm:p-6">

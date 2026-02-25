@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageHero, StatTile } from "../../components/ProductUI";
+import RoleLens from "../../components/RoleLens";
 
 export default function RoiStudioPage() {
   const [batteryMw, setBatteryMw] = useState(20);
@@ -54,6 +55,8 @@ export default function RoiStudioPage() {
         title="With vs without VoltPilot economics"
         description="Configure a representative datacentre portfolio and compare economic outcomes with idle backup assets versus a managed flexibility participation model."
       />
+
+      <RoleLens context="roi" />
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.25fr]">
         <div className="panel p-5 sm:p-6 space-y-5">

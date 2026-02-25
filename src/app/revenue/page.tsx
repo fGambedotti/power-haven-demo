@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import marketSignals from "../../../data/market_signals.json";
 import { PageHero, StatTile } from "../../components/ProductUI";
+import RoleLens from "../../components/RoleLens";
 
 const dailyRevenue = Array.from({ length: 14 }).map((_, index) => ({
   day: `D${index + 1}`,
@@ -89,6 +90,8 @@ export default function RevenuePage() {
           </div>
         }
       />
+
+      <RoleLens context="revenue" />
 
       <section className="grid gap-6 lg:grid-cols-[1.45fr_0.95fr]">
         <div className="panel p-5 sm:p-6">

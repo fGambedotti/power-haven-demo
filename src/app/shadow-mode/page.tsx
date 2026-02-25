@@ -18,6 +18,7 @@ import marketSignals from "../../../data/market_signals.json";
 import weatherSites from "../../../data/weather_sites.json";
 import DecisionRationale from "../../components/DecisionRationale";
 import { PageHero, StatTile } from "../../components/ProductUI";
+import RoleLens from "../../components/RoleLens";
 
 type Site = (typeof datacentres)[number];
 
@@ -124,6 +125,8 @@ export default function ShadowModePage() {
           </div>
         }
       />
+
+      <RoleLens context="shadow" />
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_1.05fr]">
         <div className="panel p-5 sm:p-6">

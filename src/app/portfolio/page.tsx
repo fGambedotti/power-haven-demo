@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import datacentres from "../../../data/datacentres.json";
 import DecisionRationale from "../../components/DecisionRationale";
 import { PageHero, StatTile } from "../../components/ProductUI";
+import RoleLens from "../../components/RoleLens";
 
 function scoreSite(dc: (typeof datacentres)[number], i: number) {
   const loadFactor = 0.78 + ((i % 7) * 0.03);
@@ -50,6 +51,8 @@ export default function PortfolioPage() {
         title="Aggregator readiness and site prioritization"
         description="Portfolio-level view ranks candidate sites by forecast headroom, reserve policy, and forecast confidence to support dispatch allocation decisions."
       />
+
+      <RoleLens context="portfolio" />
 
       <section className="grid gap-4 md:grid-cols-3">
         <StatTile label="Portfolio flex available" value={`${totals.portfolioFlexMw} MW`} note="Forecast-adjusted" />

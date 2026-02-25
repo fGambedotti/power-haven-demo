@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { PageHero, StatTile } from "../../components/ProductUI";
+import RoleLens from "../../components/RoleLens";
 
 const auditEvents = [
   { ts: "2026-02-25T09:10:00Z", site: "London Docklands", event: "DISPATCH_REQUEST", service: "Dynamic Containment", result: "APPROVED", reason: "All constraints passed" },
@@ -45,6 +46,8 @@ export default function CompliancePage() {
         title="Operational trust and evidence layer"
         description="Demonstrates control policy enforcement, fail-safe outcomes, and exportable audit traces for buyer diligence conversations."
       />
+
+      <RoleLens context="compliance" />
 
       <section className="grid gap-4 md:grid-cols-3">
         <StatTile label="Audit events" value={`${summary.total}`} note="Illustrative demo snapshot" />

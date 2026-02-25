@@ -10,6 +10,7 @@ import datacentres from "../../data/datacentres.json";
 import demandProfiles from "../../data/demand_profiles.json";
 import { useSimulation } from "../lib/useSimulation";
 import DecisionRationale from "./DecisionRationale";
+import RoleLens from "./RoleLens";
 
 const tabs = ["Datacentre", "Dispatch", "Settings"] as const;
 
@@ -90,6 +91,8 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        <RoleLens context="dispatch" />
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <MetricCard title="State of Charge" value={`${state.socPct.toFixed(1)}%`} note={`Reserve floor ${state.reservePct}%`} />
