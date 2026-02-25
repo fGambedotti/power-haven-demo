@@ -28,6 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <a className="rounded-lg px-4 py-2 transition hover:bg-slate-900 hover:text-white" href="/">Overview</a>
                 <a className="rounded-lg px-4 py-2 transition hover:bg-slate-900 hover:text-white" href="/shadow-mode">Shadow Mode</a>
                 <a className="rounded-lg px-4 py-2 transition hover:bg-slate-900 hover:text-white" href="/portfolio">Portfolio</a>
+                <a className="rounded-lg px-4 py-2 transition hover:bg-slate-900 hover:text-white" href="/scenarios">Scenarios</a>
                 <a className="rounded-lg px-4 py-2 transition hover:bg-slate-900 hover:text-white" href="/revenue">Revenue & Reporting</a>
               </nav>
             </div>
