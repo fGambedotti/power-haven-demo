@@ -9,6 +9,7 @@ import generationSites from "../../data/generation_sites.json";
 import datacentres from "../../data/datacentres.json";
 import demandProfiles from "../../data/demand_profiles.json";
 import { useSimulation } from "../lib/useSimulation";
+import DecisionRationale from "./DecisionRationale";
 
 const tabs = ["Datacentre", "Dispatch", "Settings"] as const;
 
@@ -152,6 +153,38 @@ export default function Dashboard() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
           Illustrative simulation for demonstration only. Not an operational control system.
         </div>
+
+        <DecisionRationale
+          title="Dispatch eligibility for selected site"
+          subtitle="Rules are evaluated before any dispatch power is applied."
+          outcome={state.failSafeMode ? "Dispatch Blocked" : "Dispatch Permitted"}
+          rules={[
+            {
+              label: "Reserve protection",
+              value: `${state.socPct.toFixed(1)}% SoC vs ${state.reservePct}% floor`,
+              status: state.socPct > state.reservePct + 1 ? "pass" : "warn",
+              reason: "Minimum backup reserve must remain available."
+            },
+            {
+              label: "Grid status",
+              value: state.gridStatus,
+              status: state.gridStatus === "OK" ? "pass" : "block",
+              reason: "Grid failure forces backup-only behavior."
+            },
+            {
+              label: "Control link",
+              value: state.controlLinkOk ? "Connected" : "Lost",
+              status: state.controlLinkOk ? "pass" : "block",
+              reason: "Link loss triggers fail-safe and blocks dispatch."
+            },
+            {
+              label: "Load threshold",
+              value: `${state.loadSpikeMw.toFixed(1)} / ${state.loadSpikeThresholdMw.toFixed(1)} MW`,
+              status: state.loadSpikeMw <= state.loadSpikeThresholdMw ? "pass" : "block",
+              reason: "Unexpected load spikes preserve capacity for backup resilience."
+            }
+          ]}
+        />
       </section>
 
       <aside className="space-y-6">

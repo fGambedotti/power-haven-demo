@@ -14,6 +14,7 @@ import {
   YAxis
 } from "recharts";
 import datacentres from "../../../data/datacentres.json";
+import DecisionRationale from "../../components/DecisionRationale";
 
 type Site = (typeof datacentres)[number];
 
@@ -212,6 +213,32 @@ export default function ShadowModePage() {
           <NoteCard title="Bridge to Option 3" body="Once validated with clients, the same data layer feeds dispatch and compliance workflows." />
         </div>
       </section>
+
+      <DecisionRationale
+        title="Why a flex window is flagged"
+        subtitle="Shadow Mode suggests windows when forecast demand stays below a threshold proxy with acceptable uncertainty."
+        outcome={nextWindow ? "Pre-notify Candidate" : "No Window"}
+        rules={[
+          {
+            label: "Forecast confidence",
+            value: `MAE ${mae} MW`,
+            status: mae <= Math.max(2, site.baselineLoadMw * 0.08) ? "pass" : "warn",
+            reason: "Lower forecast error improves confidence in pre-notification."
+          },
+          {
+            label: "Headroom threshold",
+            value: `${avgFlex} MW average`,
+            status: avgFlex >= Math.max(2, site.baselineLoadMw * 0.06) ? "pass" : "warn",
+            reason: "Minimum headroom avoids false positives."
+          },
+          {
+            label: "Dispatch enablement",
+            value: "Disabled in Shadow Mode",
+            status: "pass",
+            reason: "This route is observational and non-invasive."
+          }
+        ]}
+      />
 
       <section className="panel p-5 sm:p-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Observed vs forecast residuals</p>

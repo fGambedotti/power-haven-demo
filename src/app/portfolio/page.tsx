@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import datacentres from "../../../data/datacentres.json";
+import DecisionRationale from "../../components/DecisionRationale";
 
 function scoreSite(dc: (typeof datacentres)[number], i: number) {
   const loadFactor = 0.78 + ((i % 7) * 0.03);
@@ -30,6 +31,7 @@ function round1(n: number) {
 export default function PortfolioPage() {
   const sites = useMemo(() => datacentres.map(scoreSite).sort((a, b) => b.readiness - a.readiness), []);
   const top10 = sites.slice(0, 10);
+  const topSite = sites[0];
   const totals = useMemo(() => {
     const portfolioFlexMw = sites.reduce((s, x) => s + x.availableFlexMw, 0);
     const weightedConfidence = sites.reduce((s, x) => s + x.confidencePct, 0) / sites.length;
@@ -114,6 +116,32 @@ export default function PortfolioPage() {
           </div>
         </div>
       </section>
+
+      <DecisionRationale
+        title={`Why ${topSite.name} ranks first`}
+        subtitle="Portfolio ranking combines forecast availability, reserve policy burden, and confidence quality."
+        outcome={`Readiness ${topSite.readiness}`}
+        rules={[
+          {
+            label: "Forecast headroom",
+            value: `${topSite.availableFlexMw} MW`,
+            status: topSite.availableFlexMw >= 20 ? "pass" : "warn",
+            reason: "Higher headroom supports meaningful dispatch contribution."
+          },
+          {
+            label: "Forecast confidence",
+            value: `${topSite.confidencePct}%`,
+            status: topSite.confidencePct >= 90 ? "pass" : "warn",
+            reason: "Higher confidence reduces dispatch execution risk."
+          },
+          {
+            label: "Reserve policy impact",
+            value: `${topSite.reservePolicyPct}%`,
+            status: topSite.reservePolicyPct <= 35 ? "pass" : "warn",
+            reason: "Lower reserve burden leaves more dispatchable flexibility."
+          }
+        ]}
+      />
     </main>
   );
 }
