@@ -14,6 +14,8 @@ import {
   YAxis
 } from "recharts";
 import datacentres from "../../../data/datacentres.json";
+import marketSignals from "../../../data/market_signals.json";
+import weatherSites from "../../../data/weather_sites.json";
 import DecisionRationale from "../../components/DecisionRationale";
 
 type Site = (typeof datacentres)[number];
@@ -94,6 +96,11 @@ export default function ShadowModePage() {
   const nextWindow = windows[0] ?? null;
   const totalFlexHours = windows.reduce((s, w) => s + (w.end - w.start + 1), 0);
   const avgFlex = round1(rows.reduce((s, r) => s + r.flexMarginMw, 0) / rows.length);
+  const weather = weatherSites.find((w) => w.region === site.region);
+  const marketRows = marketSignals.hours.map((r) => ({
+    ...r,
+    flexSignal: round1((r.dynamicContainment * 0.45 + r.curtailmentMwh * 0.9) / 10)
+  }));
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -121,6 +128,39 @@ export default function ShadowModePage() {
               ))}
             </select>
           </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_1.05fr]">
+        <div className="panel p-5 sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Market and curtailment context (sample)</p>
+          <p className="mb-4 mt-1 text-sm text-slate-600">Illustrative UK-style price and curtailment traces used to contextualize pre-notification timing.</p>
+          <div className="h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={marketRows}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#dbe3ef" />
+                <XAxis dataKey="hour" interval={1} tick={{ fill: "#64748b", fontSize: 11 }} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="dynamicContainment" stroke="#0284c7" strokeWidth={2} dot={false} name="DC price" />
+                <Line type="monotone" dataKey="balancingMechanism" stroke="#0f172a" strokeWidth={2} dot={false} name="BM price" />
+                <Line type="monotone" dataKey="curtailmentMwh" stroke="#10b981" strokeWidth={2} dot={false} name="Curtailment MWh" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="panel p-5 sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Regional weather linkage (sample)</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <InfoStat label="Region" value={site.region} />
+            <InfoStat label="Wind speed" value={`${weather?.windSpeedMs ?? "-"} m/s`} />
+            <InfoStat label="Temperature" value={`${weather?.tempC ?? "-"} °C`} />
+            <InfoStat label="Wind forecast index" value={`${weather?.windForecastIndex ?? "-"} / 100`} />
+          </div>
+          <p className="mt-4 text-xs text-slate-600">
+            In production, this layer would incorporate weather forecasts and market traces to improve flex window confidence and pre-notification quality.
+          </p>
         </div>
       </section>
 
@@ -273,6 +313,15 @@ function NoteCard({ title, body }: { title: string; body: string }) {
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
       <p className="text-sm font-semibold text-slate-800">{title}</p>
       <p className="mt-1 text-xs text-slate-600">{body}</p>
+    </div>
+  );
+}
+
+function InfoStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-800">{value}</p>
     </div>
   );
 }

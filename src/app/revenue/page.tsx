@@ -16,6 +16,7 @@ import {
   Bar,
   BarChart
 } from "recharts";
+import marketSignals from "../../../data/market_signals.json";
 
 const dailyRevenue = Array.from({ length: 14 }).map((_, index) => ({
   day: `D${index + 1}`,
@@ -63,6 +64,15 @@ export default function RevenuePage() {
   const total = useMemo(() => dailyRevenue.reduce((sum, row) => sum + row.revenue, 0), []);
   const mean = useMemo(() => total / dailyRevenue.length, [total]);
   const peak = useMemo(() => Math.max(...dailyRevenue.map((d) => d.revenue)), []);
+  const marketSummary = useMemo(
+    () =>
+      marketSignals.hours.map((h) => ({
+        hour: h.hour,
+        blendedPrice: Math.round(h.dynamicContainment * 0.45 + h.balancingMechanism * 0.55),
+        curtailmentMwh: h.curtailmentMwh
+      })),
+    []
+  );
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -172,6 +182,33 @@ export default function RevenuePage() {
               <Bar dataKey="balancing" name="Balancing Mechanism" fill="#10b981" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="panel p-5 sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Sample intraday market signals</p>
+          <p className="mb-4 mt-1 text-sm text-slate-600">Illustrative prices and curtailment traces for revenue-context storytelling.</p>
+          <div className="h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={marketSummary}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#dbe3ef" />
+                <XAxis dataKey="hour" interval={1} tick={{ fill: "#64748b", fontSize: 11 }} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} />
+                <Tooltip />
+                <Area type="monotone" dataKey="blendedPrice" stroke="#0284c7" fill="#bfdbfe" fillOpacity={0.35} name="Blended price" />
+                <Area type="monotone" dataKey="curtailmentMwh" stroke="#10b981" fill="#bbf7d0" fillOpacity={0.35} name="Curtailment" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="panel p-5 sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Data provenance (demo)</p>
+          <ul className="mt-3 space-y-2 text-sm text-slate-700">
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Revenue and service split: simulated portfolio settlement outputs.</li>
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Intraday prices and curtailment: illustrative UK-style sample traces.</li>
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Purpose: improve realism and explain how commercial outcomes relate to system conditions.</li>
+          </ul>
         </div>
       </section>
     </main>
