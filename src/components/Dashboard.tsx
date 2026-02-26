@@ -12,6 +12,7 @@ import demandProfiles from "../../data/demand_profiles.json";
 import { useSimulation } from "../lib/useSimulation";
 import DecisionRationale from "./DecisionRationale";
 import RoleLens from "./RoleLens";
+import { applyDashboardBootstrapSettings, getDashboardSceneBootstrap } from "../lib/demoBootstrap";
 
 const tabs = ["Datacentre", "Dispatch", "Settings"] as const;
 
@@ -112,34 +113,14 @@ export default function Dashboard() {
     const scene = searchParams.get("demoScene");
     if (!scene || appliedDemoSceneRef.current === scene) return;
     appliedDemoSceneRef.current = scene;
-
-    if (scene === "dispatch-grid-stress") {
-      setSelectedId("DC-17");
-      setActiveTab("Dispatch");
-      updateSetting("gridStatus", "OK");
-      updateSetting("controlLinkOk", true);
-      updateSetting("autoDispatch", false);
-      updateSetting("reservePct", 25);
+    const bootstrap = getDashboardSceneBootstrap(scene);
+    if (!bootstrap) return;
+    setSelectedId(bootstrap.selectedDatacentreId);
+    setActiveTab(bootstrap.activeTab);
+    applyDashboardBootstrapSettings(updateSetting, bootstrap.settings);
+    if (bootstrap.autoTriggerDispatch) {
       const timer = setTimeout(() => triggerDispatch(), 450);
       return () => clearTimeout(timer);
-    }
-
-    if (scene === "dispatch-failsafe") {
-      setSelectedId("DC-18");
-      setActiveTab("Dispatch");
-      updateSetting("gridStatus", "FAILED");
-      updateSetting("controlLinkOk", false);
-      updateSetting("autoDispatch", false);
-      return;
-    }
-
-    if (scene === "dispatch-standby") {
-      setSelectedId("DC-13");
-      setActiveTab("Datacentre");
-      updateSetting("gridStatus", "OK");
-      updateSetting("controlLinkOk", true);
-      updateSetting("autoDispatch", false);
-      return;
     }
   }, [searchParams, setSelectedId, triggerDispatch, updateSetting]);
 
