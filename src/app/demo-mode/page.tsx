@@ -3,54 +3,12 @@
 import { useMemo, useState } from "react";
 import { PageHero, StatTile } from "../../components/ProductUI";
 import RoleLens from "../../components/RoleLens";
-
-const sequence = [
-  {
-    id: "shadow",
-    title: "Observe Demand (Shadow Mode)",
-    route: "/shadow-mode?preset=observe-london",
-    durationSec: 45,
-    objective: "Show non-invasive monitoring, forecast confidence, and detected flex windows.",
-    talkTrack: "We start read-only. VoltPilot learns demand and pre-notifies flexible windows before any control integration."
-  },
-  {
-    id: "portfolio",
-    title: "Rank Portfolio Readiness",
-    route: "/portfolio?preset=top-candidates",
-    durationSec: 40,
-    objective: "Show aggregator prioritization across sites.",
-    talkTrack: "The portfolio engine ranks sites by forecasted headroom, reserve policy, and confidence."
-  },
-  {
-    id: "dispatch",
-    title: "Execute Safe Dispatch",
-    route: "/?demoScene=dispatch-grid-stress",
-    durationSec: 50,
-    objective: "Trigger NESO dispatch and show safety constraints and fail-safe behavior.",
-    talkTrack: "Dispatch is allowed only if reserve, control-link, and load constraints all pass."
-  },
-  {
-    id: "proof",
-    title: "Prove Value and Reporting",
-    route: "/revenue?preset=investor-proof",
-    durationSec: 35,
-    objective: "Show value capture, service mix, and reporting outputs.",
-    talkTrack: "Commercial and operations stakeholders get clear, exportable performance evidence."
-  },
-  {
-    id: "roi",
-    title: "Counterfactual Economics",
-    route: "/roi-studio?preset=tier2-colo",
-    durationSec: 45,
-    objective: "Quantify with-vs-without VoltPilot outcomes.",
-    talkTrack: "This converts technical capability into an investment case and pilot scope discussion."
-  }
-] as const;
+import { DEMO_SCENES } from "../../lib/demoScenes";
 
 export default function DemoModePage() {
   const [active, setActive] = useState(0);
-  const totalTime = useMemo(() => sequence.reduce((s, x) => s + x.durationSec, 0), []);
-  const current = sequence[active];
+  const totalTime = useMemo(() => DEMO_SCENES.reduce((s, x) => s + x.durationSec, 0), []);
+  const current = DEMO_SCENES[active];
 
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -60,9 +18,9 @@ export default function DemoModePage() {
         description="One coherent sequence for presenting VoltPilot from observability to orchestration to proof of value."
         right={
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <StatTile label="Scenes" value={`${sequence.length}`} />
+            <StatTile label="Scenes" value={`${DEMO_SCENES.length}`} />
             <StatTile label="Run time" value={`${Math.ceil(totalTime / 60)} min`} />
-            <StatTile label="Current" value={`${active + 1}/${sequence.length}`} />
+            <StatTile label="Current" value={`${active + 1}/${DEMO_SCENES.length}`} />
           </div>
         }
       />
@@ -73,7 +31,7 @@ export default function DemoModePage() {
         <div className="panel p-5 sm:p-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Scene sequence</p>
           <div className="mt-3 space-y-2">
-            {sequence.map((item, idx) => (
+            {DEMO_SCENES.map((item, idx) => (
               <button
                 key={item.id}
                 onClick={() => setActive(idx)}
@@ -98,7 +56,7 @@ export default function DemoModePage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setActive((i) => Math.max(0, i - 1))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-700">Prev</button>
-                <button onClick={() => setActive((i) => Math.min(sequence.length - 1, i + 1))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-700">Next</button>
+                <button onClick={() => setActive((i) => Math.min(DEMO_SCENES.length - 1, i + 1))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-700">Next</button>
                 <a href={current.route} className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-white">Open Scene</a>
               </div>
             </div>
