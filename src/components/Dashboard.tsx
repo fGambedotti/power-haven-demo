@@ -29,6 +29,8 @@ export default function Dashboard() {
   const {
     state,
     eventLog,
+    decisionTraces,
+    stepSnapshots,
     dispatchPulse,
     flex,
     selectedId,
@@ -108,6 +110,8 @@ export default function Dashboard() {
       confidence: dc.confidence
     }));
   }, [dispatchOrchestrationActive, portfolioAllocation, state.activeDispatch, state.batteryMw]);
+  const latestDecisionTrace = decisionTraces[0];
+  const recentSnapshots = stepSnapshots.slice(0, 6);
 
   useEffect(() => {
     const scene = searchParams.get("demoScene");
@@ -303,6 +307,80 @@ export default function Dashboard() {
             }
           ]}
         />
+
+        {latestDecisionTrace && (
+          <div className="panel p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Dispatch Decision Trace</p>
+                <p className="font-display text-lg font-semibold text-slate-900">
+                  {latestDecisionTrace.eventId} · {latestDecisionTrace.resolvedStatus}
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white">
+                {latestDecisionTrace.proposed.service}
+              </span>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {latestDecisionTrace.checks.map((check) => (
+                <div key={check.rule} className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
+                  <div>
+                    <p className="font-semibold text-slate-800">{check.rule}</p>
+                    <p className="text-slate-500">{check.detail}</p>
+                  </div>
+                  <span className={clsx(
+                    "rounded-full px-2 py-1 font-bold uppercase tracking-[0.08em]",
+                    check.passed ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                  )}>
+                    {check.passed ? "Pass" : "Fail"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {recentSnapshots.length > 0 && (
+          <div className="panel p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Replay Buffer</p>
+                <p className="font-display text-lg font-semibold text-slate-900">Latest Simulation Steps</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-700">
+                {stepSnapshots.length} captured
+              </span>
+            </div>
+            <div className="mt-3 overflow-x-auto">
+              <table className="min-w-full text-xs">
+                <thead>
+                  <tr className="text-left text-slate-500">
+                    <th className="pb-2 pr-3 font-semibold">t(s)</th>
+                    <th className="pb-2 pr-3 font-semibold">Dispatch</th>
+                    <th className="pb-2 pr-3 font-semibold">SoC</th>
+                    <th className="pb-2 pr-3 font-semibold">Power</th>
+                    <th className="pb-2 pr-3 font-semibold">Load</th>
+                    <th className="pb-2 pr-3 font-semibold">Mode</th>
+                    <th className="pb-2 font-semibold">Rev</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentSnapshots.map((snap) => (
+                    <tr key={`${snap.t}-${snap.activeDispatchEventId ?? "idle"}`} className="border-t border-slate-100 text-slate-700">
+                      <td className="py-2 pr-3">{snap.t}</td>
+                      <td className="py-2 pr-3">{snap.activeDispatchEventId ?? "—"}</td>
+                      <td className="py-2 pr-3">{snap.socPct.toFixed(1)}%</td>
+                      <td className="py-2 pr-3">{snap.powerMw.toFixed(1)} MW</td>
+                      <td className="py-2 pr-3">{snap.loadMw.toFixed(1)} MW</td>
+                      <td className="py-2 pr-3">{snap.failSafeMode ? "Fail-safe" : "Normal"}</td>
+                      <td className="py-2">£{snap.revenue.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </section>
 
       <aside className="space-y-6">

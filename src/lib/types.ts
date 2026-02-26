@@ -49,3 +49,39 @@ export interface DispatchRequest {
   targetMw: number;
   durationSec: number;
 }
+
+export type DispatchDecisionResolution =
+  | "PUTATIVE"
+  | "APPROVED"
+  | "REJECTED"
+  | "CURTAILED"
+  | "ABORTED"
+  | "EXECUTED";
+
+export interface DispatchDecisionCheck {
+  rule: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface DispatchDecisionTrace {
+  eventId: string;
+  timestamp: string;
+  datacentreId: string | null;
+  proposed: DispatchRequest;
+  checks: DispatchDecisionCheck[];
+  resolvedStatus: DispatchDecisionResolution;
+  resolvedPowerMw: number;
+  note?: string;
+}
+
+export interface SimStepSnapshot {
+  t: number;
+  selectedDatacentreId: string | null;
+  activeDispatchEventId: string | null;
+  socPct: number;
+  powerMw: number;
+  loadMw: number;
+  failSafeMode: boolean;
+  revenue: number;
+}
