@@ -16,6 +16,7 @@ interface Datacentre {
 }
 
 const SERVICES = ["Dynamic Containment", "Balancing Mechanism"] as const;
+const DEMO_LOOP_SECONDS = 180;
 
 function calculateLoad(baseline: number, timeSeconds: number): number {
   const wave = Math.sin(timeSeconds / 45) * 0.08;
@@ -26,6 +27,7 @@ function calculateLoad(baseline: number, timeSeconds: number): number {
 export function useSimulation(datacentres: Datacentre[]) {
   const [selectedId, setSelectedId] = useState(datacentres[0]?.id ?? null);
   const initialDc = datacentres.find((dc) => dc.id === selectedId) ?? datacentres[0];
+  const [isPlaying, setIsPlaying] = useState(true);
 
   const [state, setState] = useState<SimState>(() =>
     initState({
@@ -55,7 +57,32 @@ export function useSimulation(datacentres: Datacentre[]) {
     }));
   }, [selectedId, datacentres]);
 
+  const resetScenario = () => {
+    const dc = datacentres.find((item) => item.id === selectedId) ?? datacentres[0];
+    setState((prev) => {
+      const next = initState({
+        datacentreId: dc?.id ?? null,
+        batteryMw: dc?.batteryMw ?? prev.batteryMw,
+        batteryMwh: dc?.batteryMwh ?? prev.batteryMwh,
+        baselineLoadMw: dc?.baselineLoadMw ?? prev.baselineLoadMw
+      });
+      return {
+        ...next,
+        reservePct: prev.reservePct,
+        loadSpikeThresholdMw: prev.loadSpikeThresholdMw,
+        autoDispatch: prev.autoDispatch,
+        gridStatus: prev.gridStatus,
+        controlLinkOk: prev.controlLinkOk
+      };
+    });
+    setEventLog([]);
+    setDecisionTraces([]);
+    setStepSnapshots([]);
+    setDispatchPulse(false);
+  };
+
   useEffect(() => {
+    if (!isPlaying) return;
     const interval = setInterval(() => {
       setState((prev) => {
         const updatedLoad = calculateLoad(prev.baselineLoadMw, prev.timeSeconds);
@@ -111,6 +138,21 @@ export function useSimulation(datacentres: Datacentre[]) {
           );
         }
 
+        if (result.state.timeSeconds >= DEMO_LOOP_SECONDS) {
+          setEventLog([]);
+          setDecisionTraces([]);
+          setStepSnapshots([]);
+          const looped = {
+            ...result.state,
+            timeSeconds: 0,
+            todayRevenue: 0,
+            powerMw: 0,
+            activeDispatch: null,
+            activeService: null
+          };
+          return looped;
+        }
+
         if (result.state.autoDispatch && !result.state.activeDispatch && result.state.timeSeconds % 45 === 0) {
           const request: DispatchRequest = {
             service: SERVICES[result.state.timeSeconds % 2],
@@ -159,7 +201,7 @@ export function useSimulation(datacentres: Datacentre[]) {
     }, 1000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isPlaying]);
 
   const triggerDispatch = () => {
     setState((prev) => {
@@ -208,7 +250,11 @@ export function useSimulation(datacentres: Datacentre[]) {
     selectedId,
     setSelectedId,
     triggerDispatch,
-    updateSetting
+    updateSetting,
+    isPlaying,
+    setIsPlaying,
+    resetScenario,
+    demoLoopSeconds: DEMO_LOOP_SECONDS
   };
 }
 

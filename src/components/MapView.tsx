@@ -25,6 +25,7 @@ interface GenerationSite {
 }
 
 interface MapViewProps {
+  ukOutline: GeoJSON.FeatureCollection;
   regions: GeoJSON.FeatureCollection;
   corridors: GeoJSON.FeatureCollection;
   datacentres: Datacentre[];
@@ -42,6 +43,7 @@ interface MapViewProps {
 const NESO_COORD: [number, number] = [-1.7, 52.7];
 
 export default function MapView({
+  ukOutline,
   regions,
   corridors,
   datacentres,
@@ -106,6 +108,27 @@ export default function MapView({
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
     map.on("load", () => {
+      map.addSource("uk-outline", { type: "geojson", data: ukOutline });
+      map.addLayer({
+        id: "uk-outline-fill",
+        type: "fill",
+        source: "uk-outline",
+        paint: {
+          "fill-color": "#ffffff",
+          "fill-opacity": 0.92
+        }
+      });
+      map.addLayer({
+        id: "uk-outline-line",
+        type: "line",
+        source: "uk-outline",
+        paint: {
+          "line-color": "#475569",
+          "line-width": 1.4,
+          "line-opacity": 0.65
+        }
+      });
+
       map.addSource("regions", { type: "geojson", data: regions });
       map.addLayer({
         id: "regions-fill",
@@ -319,7 +342,7 @@ export default function MapView({
       map.remove();
       mapRef.current = null;
     };
-  }, [regions, corridors, datacentreGeo, generationGeo, selectedDatacentreId, dispatchLine, showDatacentreLabels, onSelectDatacentre]);
+  }, [ukOutline, regions, corridors, datacentreGeo, generationGeo, selectedDatacentreId, dispatchLine, showDatacentreLabels, onSelectDatacentre]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -5,16 +5,20 @@ import clsx from "clsx";
 import { useSearchParams } from "next/navigation";
 import MapView from "./MapView";
 import regions from "../../data/uk_regions.json";
+import ukOutline from "../../data/uk_outline.json";
 import corridors from "../../data/transmission_lines.json";
 import generationSites from "../../data/generation_sites.json";
 import datacentres from "../../data/datacentres.json";
 import demandProfiles from "../../data/demand_profiles.json";
 import { useSimulation } from "../lib/useSimulation";
-import DecisionRationale from "./DecisionRationale";
-import RoleLens from "./RoleLens";
 import { applyDashboardBootstrapSettings, getDashboardSceneBootstrap } from "../lib/demoBootstrap";
 
 const tabs = ["Datacentre", "Dispatch", "Settings"] as const;
+const tabMeta: Record<(typeof tabs)[number], { label: string; description: string }> = {
+  Datacentre: { label: "Site", description: "Select a datacentre and view its backup battery profile." },
+  Dispatch: { label: "Action", description: "Trigger or review dispatch events and outcomes." },
+  Settings: { label: "Safety", description: "Adjust reserve policy and fail-safe controls." }
+};
 
 type GenerationSiteRecord = {
   id: string;
@@ -36,18 +40,23 @@ export default function Dashboard() {
     selectedId,
     setSelectedId,
     triggerDispatch,
-    updateSetting
+    updateSetting,
+    isPlaying,
+    setIsPlaying,
+    resetScenario,
+    demoLoopSeconds
   } = useSimulation(datacentres);
   const searchParams = useSearchParams();
   const appliedDemoSceneRef = useRef<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Datacentre");
   const [mapLayers, setMapLayers] = useState({
-    regions: true,
+    regions: false,
     corridors: true,
     generation: true,
-    labels: false
+    labels: true
   });
+  const [showTechnicalView, setShowTechnicalView] = useState(false);
   const [replayCursor, setReplayCursor] = useState(0);
   const [replayPlaying, setReplayPlaying] = useState(false);
 
@@ -57,6 +66,29 @@ export default function Dashboard() {
   const nowHour = Math.floor(state.timeSeconds / 3600) % 24;
   const currentDemand = demandProfiles.today[nowHour] ?? 0;
   const dispatchOrchestrationActive = Boolean(dispatchPulse || state.activeDispatch);
+  const scenarioLoopSecond = state.timeSeconds % demoLoopSeconds;
+  const scenarioMinute = Math.floor(scenarioLoopSecond / 60)
+    .toString()
+    .padStart(2, "0");
+  const scenarioSecond = Math.floor(scenarioLoopSecond % 60)
+    .toString()
+    .padStart(2, "0");
+  const safetyChecks = [
+    { label: "Reserve floor", ok: state.socPct > state.reservePct + 1, detail: `${state.socPct.toFixed(1)}% >= ${state.reservePct}%` },
+    { label: "Grid status", ok: state.gridStatus === "OK", detail: state.gridStatus === "OK" ? "Normal" : "Failed" },
+    { label: "Control link", ok: state.controlLinkOk, detail: state.controlLinkOk ? "Connected" : "Lost" }
+  ];
+  const primaryWhyLines = [
+    state.failSafeMode
+      ? "Fail-safe is active, so flexibility dispatch is blocked and backup reserve is prioritized."
+      : state.activeDispatch
+        ? `Dispatch ${state.activeDispatch.eventId} is active and routed to the selected site.`
+        : "System is ready to dispatch if a NESO signal is triggered.",
+    `Reserve policy keeps at least ${state.reservePct}% SoC for backup continuity.`,
+    state.gridStatus === "OK" && state.controlLinkOk
+      ? "Grid and control link are healthy."
+      : "One or more safety conditions are blocking dispatch."
+  ];
 
   const portfolioAllocation = useMemo(() => {
     const demandFactor = demandProfiles.today[nowHour] ?? 0.7;
@@ -161,18 +193,30 @@ export default function Dashboard() {
         <div className="panel p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Live Demonstration</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Investor Demo · Interactive Scenario</p>
               <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                NESO dispatch to datacentre battery flexibility
+                VoltPilot safely turns backup batteries into grid flexibility
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Simulation shows dispatch routing, corridor impact, reserve enforcement, and fail-safe behavior for
-                backup protection.
+                Simple scenario playback showing what happens when a NESO dispatch arrives and how backup reserve remains protected.
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-right">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Sim Time</p>
-              <p className="font-display text-lg font-semibold text-slate-900">T+{state.timeSeconds}s</p>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Scenario Playback</p>
+              <p className="font-display text-lg font-semibold text-slate-900">
+                {scenarioMinute}:{scenarioSecond} <span className="text-sm text-slate-500">/ {Math.floor(demoLoopSeconds / 60)}:00 loop</span>
+              </p>
+              <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+                <button className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700" onClick={() => setIsPlaying((v) => !v)}>
+                  {isPlaying ? "Pause" : "Play"}
+                </button>
+                <button className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700" onClick={resetScenario}>
+                  Restart Scenario
+                </button>
+                <button className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white" onClick={triggerDispatch} disabled={state.failSafeMode}>
+                  Next Event
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -183,36 +227,43 @@ export default function Dashboard() {
           </div>
         )}
 
-        <RoleLens context="dispatch" />
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <MetricCard title="State of Charge" value={`${state.socPct.toFixed(1)}%`} note={`Reserve floor ${state.reservePct}%`} />
-          <MetricCard title="Battery Power" value={`${state.powerMw.toFixed(1)} MW`} note="Positive = discharge" />
-          <MetricCard title="Available Flex" value={`${flex.availableFlexMw.toFixed(1)} MW`} note="Constraint-adjusted" />
-          <MetricCard title="Backup Reserved" value={`${flex.reservedBackupPct.toFixed(0)}%`} note="Auto-lock in fail-safe" />
-          <MetricCard title="Active Service" value={state.activeService ?? "Standby"} note="NESO service route" />
-          <MetricCard title="Today Revenue" value={formatCurrency(state.todayRevenue)} note="Simulated settlement" tone="accent" />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard title="Backup Status" value={backupAtRisk || state.failSafeMode ? (state.failSafeMode ? "Fail-safe" : "Warning") : "Protected"} note="Click to review safety controls" tone={backupAtRisk || state.failSafeMode ? "warn" : "accent"} onClick={() => setActiveTab("Settings")} />
+          <MetricCard title="Battery SoC" value={`${state.socPct.toFixed(1)}%`} note={`Reserve floor ${state.reservePct}% · Click for site`} onClick={() => setActiveTab("Datacentre")} />
+          <MetricCard title="Flexibility Available" value={`${flex.availableFlexMw.toFixed(1)} MW`} note={(state.failSafeMode ? "Blocked by fail-safe" : "Ready for dispatch") + " · Click for action"} onClick={() => setActiveTab("Dispatch")} />
+          <MetricCard title="Today's Revenue" value={formatCurrency(state.todayRevenue)} note={`Service: ${state.activeService ?? "Standby"} · Live sim`} onClick={() => window.location.assign("/roi-studio")} />
         </div>
 
         <div className="panel p-5 sm:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">System Safety</p>
-              <p className="font-display text-xl font-semibold text-slate-900">Backup integrity state</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Safety Shield</p>
+              <p className="font-display text-xl font-semibold text-slate-900">Is backup protected?</p>
             </div>
             <span
               className={clsx(
                 "rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.14em]",
-                backupAtRisk ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700 badge-pulse"
+                backupAtRisk || state.failSafeMode ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-700 badge-pulse"
               )}
             >
-              {backupAtRisk ? "Backup At Risk" : "Backup Protected"}
+              {state.failSafeMode ? "Fail-safe Active" : backupAtRisk ? "Warning" : "Backup Protected"}
             </span>
           </div>
           <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-3">
-            <StatusPill label="Grid" value={state.gridStatus === "OK" ? "Normal" : "Failed"} ok={state.gridStatus === "OK"} />
-            <StatusPill label="Control Link" value={state.controlLinkOk ? "Connected" : "Lost"} ok={state.controlLinkOk} />
-            <StatusPill label="Load Spike" value={`${state.loadSpikeMw.toFixed(1)} MW`} ok={state.loadSpikeMw <= state.loadSpikeThresholdMw} />
+            {safetyChecks.map((check) => (
+              <StatusPill key={check.label} label={check.label} value={check.detail} ok={check.ok} />
+            ))}
+          </div>
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Why this action?</p>
+            <ul className="mt-2 space-y-1 text-sm text-slate-700">
+              {primaryWhyLines.map((line) => (
+                <li key={line} className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
@@ -232,6 +283,7 @@ export default function Dashboard() {
           </div>
           <div className="p-4 sm:p-6">
             <MapView
+              ukOutline={ukOutline as GeoJSON.FeatureCollection}
               regions={regions as GeoJSON.FeatureCollection}
               corridors={corridors as GeoJSON.FeatureCollection}
               datacentres={datacentres}
@@ -247,17 +299,41 @@ export default function Dashboard() {
             />
             <div className="mt-4 grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Aggregator allocation preview</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Dispatch Plan (Portfolio)</p>
                 <p className="mt-1 text-sm text-slate-700">
                   {dispatchOrchestrationActive
-                    ? "Primary and secondary routing candidates are visualized to show portfolio-level dispatch orchestration."
-                    : "Trigger a dispatch to preview multi-site route allocation and corridor impact."}
+                    ? "VoltPilot splits the dispatch across the best-ready sites while protecting reserve policy."
+                    : "Trigger a dispatch to show how VoltPilot selects and splits a grid instruction across the portfolio."}
                 </p>
+                <div className="mt-3 space-y-2">
+                  {allocationRows.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
+                      No active dispatch plan yet.
+                    </div>
+                  ) : (
+                    allocationRows.map((row) => (
+                      <div key={row.id} className="rounded-lg border border-slate-200 bg-white p-3">
+                        <div className="flex items-center justify-between gap-3 text-xs">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-slate-800">{row.name}</p>
+                            <p className="text-slate-500">{row.role} · {row.confidence}% confidence</p>
+                          </div>
+                          <p className="font-bold text-slate-900">{row.mw} MW</p>
+                        </div>
+                        <div className="mt-2 h-2 rounded-full bg-slate-200">
+                          <div
+                            className={clsx("h-2 rounded-full", row.role === "Primary" ? "bg-amber-500" : "bg-cyan-500")}
+                            style={{ width: `${Math.min(100, (row.mw / Math.max(state.activeDispatch?.targetMw ?? state.batteryMw ?? 1, 1)) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <MiniToggle label="Regions" enabled={mapLayers.regions} onToggle={() => setMapLayers((prev) => ({ ...prev, regions: !prev.regions }))} />
-                  <MiniToggle label="Corridors" enabled={mapLayers.corridors} onToggle={() => setMapLayers((prev) => ({ ...prev, corridors: !prev.corridors }))} />
-                  <MiniToggle label="Generation" enabled={mapLayers.generation} onToggle={() => setMapLayers((prev) => ({ ...prev, generation: !prev.generation }))} />
-                  <MiniToggle label="DC labels" enabled={mapLayers.labels} onToggle={() => setMapLayers((prev) => ({ ...prev, labels: !prev.labels }))} />
+                  <MiniToggle label="Heatmap" enabled={mapLayers.regions} onToggle={() => setMapLayers((prev) => ({ ...prev, regions: !prev.regions }))} />
+                  <MiniToggle label="Labels" enabled={mapLayers.labels} onToggle={() => setMapLayers((prev) => ({ ...prev, labels: !prev.labels }))} />
+                  <MiniToggle label="Gen sites" enabled={mapLayers.generation} onToggle={() => setMapLayers((prev) => ({ ...prev, generation: !prev.generation }))} />
                 </div>
               </div>
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -303,39 +379,22 @@ export default function Dashboard() {
           Illustrative simulation for demonstration only. Not an operational control system.
         </div>
 
-        <DecisionRationale
-          title="Dispatch eligibility for selected site"
-          subtitle="Rules are evaluated before any dispatch power is applied."
-          outcome={state.failSafeMode ? "Dispatch Blocked" : "Dispatch Permitted"}
-          rules={[
-            {
-              label: "Reserve protection",
-              value: `${state.socPct.toFixed(1)}% SoC vs ${state.reservePct}% floor`,
-              status: state.socPct > state.reservePct + 1 ? "pass" : "warn",
-              reason: "Minimum backup reserve must remain available."
-            },
-            {
-              label: "Grid status",
-              value: state.gridStatus,
-              status: state.gridStatus === "OK" ? "pass" : "block",
-              reason: "Grid failure forces backup-only behavior."
-            },
-            {
-              label: "Control link",
-              value: state.controlLinkOk ? "Connected" : "Lost",
-              status: state.controlLinkOk ? "pass" : "block",
-              reason: "Link loss triggers fail-safe and blocks dispatch."
-            },
-            {
-              label: "Load threshold",
-              value: `${state.loadSpikeMw.toFixed(1)} / ${state.loadSpikeThresholdMw.toFixed(1)} MW`,
-              status: state.loadSpikeMw <= state.loadSpikeThresholdMw ? "pass" : "block",
-              reason: "Unexpected load spikes preserve capacity for backup resilience."
-            }
-          ]}
-        />
+        <div className="panel p-4 sm:p-5">
+          <button
+            className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left"
+            onClick={() => setShowTechnicalView((v) => !v)}
+          >
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Technical View</p>
+              <p className="text-sm font-semibold text-slate-900">
+                {showTechnicalView ? "Hide detailed traces and telemetry" : "Show detailed traces and telemetry"}
+              </p>
+            </div>
+            <span className="text-xs font-bold text-slate-600">{showTechnicalView ? "Hide" : "Show"}</span>
+          </button>
+        </div>
 
-        {latestDecisionTrace && (
+        {showTechnicalView && latestDecisionTrace && (
           <div className="panel p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -367,7 +426,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {recentSnapshots.length > 0 && (
+        {showTechnicalView && recentSnapshots.length > 0 && (
           <div className="panel p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -482,9 +541,13 @@ export default function Dashboard() {
                 )}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab}
+                {tabMeta[tab].label}
               </button>
             ))}
+          </div>
+          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{tabMeta[activeTab].label}</p>
+            <p className="text-xs text-slate-600">{tabMeta[activeTab].description}</p>
           </div>
 
           {activeTab === "Datacentre" && (
@@ -533,8 +596,7 @@ export default function Dashboard() {
               </button>
 
               <p className="text-xs text-slate-600">
-                Dispatch animation draws the command path from NESO to the selected datacentre and highlights impacted
-                nearby transmission corridors.
+                Starts a simulated dispatch event. The map shows the route from NESO to selected portfolio sites.
               </p>
 
               <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -665,19 +727,29 @@ function MetricCard({
   title,
   value,
   note,
-  tone = "default"
+  tone = "default",
+  onClick
 }: {
   title: string;
   value: string;
   note: string;
-  tone?: "default" | "accent";
+  tone?: "default" | "accent" | "warn";
+  onClick?: () => void;
 }) {
   return (
-    <div className={clsx("metric-tile p-4", tone === "accent" && "bg-gradient-to-r from-cyan-50 to-blue-50")}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={clsx(
+        "metric-tile w-full p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md",
+        tone === "accent" && "bg-gradient-to-r from-cyan-50 to-blue-50",
+        tone === "warn" && "bg-gradient-to-r from-amber-50 to-rose-50"
+      )}
+    >
       <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">{title}</p>
       <p className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900">{value}</p>
       <p className="mt-1 text-xs text-slate-500">{note}</p>
-    </div>
+    </button>
   );
 }
 
