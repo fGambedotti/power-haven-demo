@@ -48,6 +48,8 @@ export default function Dashboard() {
     generation: true,
     labels: false
   });
+  const [replayCursor, setReplayCursor] = useState(0);
+  const [replayPlaying, setReplayPlaying] = useState(false);
 
   const selectedDc = datacentres.find((dc) => dc.id === selectedId);
   const activeDemoScene = searchParams.get("demoScene");
@@ -112,6 +114,31 @@ export default function Dashboard() {
   }, [dispatchOrchestrationActive, portfolioAllocation, state.activeDispatch, state.batteryMw]);
   const latestDecisionTrace = decisionTraces[0];
   const recentSnapshots = stepSnapshots.slice(0, 6);
+  const replayFrames = useMemo(() => [...stepSnapshots].slice(0, 20).reverse(), [stepSnapshots]);
+  const selectedReplayFrame = replayFrames[Math.min(replayCursor, Math.max(replayFrames.length - 1, 0))] ?? null;
+
+  useEffect(() => {
+    if (!replayFrames.length) {
+      setReplayCursor(0);
+      setReplayPlaying(false);
+      return;
+    }
+    setReplayCursor((prev) => Math.min(prev, replayFrames.length - 1));
+  }, [replayFrames.length]);
+
+  useEffect(() => {
+    if (!replayPlaying || replayFrames.length < 2) return;
+    const interval = setInterval(() => {
+      setReplayCursor((prev) => {
+        if (prev >= replayFrames.length - 1) {
+          setReplayPlaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 650);
+    return () => clearInterval(interval);
+  }, [replayPlaying, replayFrames.length]);
 
   useEffect(() => {
     const scene = searchParams.get("demoScene");
@@ -351,6 +378,64 @@ export default function Dashboard() {
                 {stepSnapshots.length} captured
               </span>
             </div>
+
+            {selectedReplayFrame && replayFrames.length > 1 && (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Replay Scrubber</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      Frame {replayCursor + 1} / {replayFrames.length} · t={selectedReplayFrame.t}s
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                      onClick={() => {
+                        setReplayPlaying(false);
+                        setReplayCursor(0);
+                      }}
+                    >
+                      Reset
+                    </button>
+                    <button
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                      onClick={() => setReplayPlaying((v) => !v)}
+                    >
+                      {replayPlaying ? "Pause" : "Play"}
+                    </button>
+                  </div>
+                </div>
+
+                <input
+                  className="mt-3 w-full accent-slate-900"
+                  type="range"
+                  min={0}
+                  max={Math.max(replayFrames.length - 1, 0)}
+                  step={1}
+                  value={replayCursor}
+                  onChange={(event) => {
+                    setReplayPlaying(false);
+                    setReplayCursor(Number(event.target.value));
+                  }}
+                />
+
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <ReplayMetric label="SoC" value={`${selectedReplayFrame.socPct.toFixed(1)}%`} ratio={selectedReplayFrame.socPct / 100} tone="emerald" />
+                  <ReplayMetric label="Power" value={`${selectedReplayFrame.powerMw.toFixed(1)} MW`} ratio={Math.min(Math.abs(selectedReplayFrame.powerMw) / Math.max(state.batteryMw || 1, 1), 1)} tone="blue" />
+                  <ReplayMetric label="Load" value={`${selectedReplayFrame.loadMw.toFixed(1)} MW`} ratio={Math.min(selectedReplayFrame.loadMw / Math.max(state.loadSpikeThresholdMw || 1, 1), 1)} tone={selectedReplayFrame.failSafeMode ? "rose" : "amber"} />
+                  <ReplayMetric label="Revenue" value={`£${selectedReplayFrame.revenue.toLocaleString()}`} ratio={Math.min(selectedReplayFrame.revenue / Math.max(state.todayRevenue || 1, 1), 1)} tone="slate" />
+                </div>
+
+                <p className="mt-3 text-xs text-slate-600">
+                  {selectedReplayFrame.failSafeMode
+                    ? "Fail-safe active: dispatch is suppressed and backup reserve is prioritized."
+                    : selectedReplayFrame.activeDispatchEventId
+                      ? `Dispatch ${selectedReplayFrame.activeDispatchEventId} active.`
+                      : "No active dispatch in this frame."}
+                </p>
+              </div>
+            )}
             <div className="mt-3 overflow-x-auto">
               <table className="min-w-full text-xs">
                 <thead>
@@ -543,6 +628,36 @@ export default function Dashboard() {
         </div>
       </aside>
     </main>
+  );
+}
+
+function ReplayMetric({
+  label,
+  value,
+  ratio,
+  tone
+}: {
+  label: string;
+  value: string;
+  ratio: number;
+  tone: "emerald" | "blue" | "amber" | "rose" | "slate";
+}) {
+  const toneClass = {
+    emerald: "bg-emerald-500",
+    blue: "bg-blue-500",
+    amber: "bg-amber-500",
+    rose: "bg-rose-500",
+    slate: "bg-slate-700"
+  }[tone];
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-3">
+      <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
+      <div className="mt-2 h-1.5 rounded-full bg-slate-100">
+        <div className={clsx("h-1.5 rounded-full transition-all", toneClass)} style={{ width: `${Math.max(0, Math.min(ratio, 1)) * 100}%` }} />
+      </div>
+    </div>
   );
 }
 
