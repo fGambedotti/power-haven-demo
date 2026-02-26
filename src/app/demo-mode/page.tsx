@@ -8,7 +8,7 @@ const sequence = [
   {
     id: "shadow",
     title: "Observe Demand (Shadow Mode)",
-    route: "/shadow-mode",
+    route: "/shadow-mode?preset=observe-london",
     durationSec: 45,
     objective: "Show non-invasive monitoring, forecast confidence, and detected flex windows.",
     talkTrack: "We start read-only. VoltPilot learns demand and pre-notifies flexible windows before any control integration."
@@ -16,7 +16,7 @@ const sequence = [
   {
     id: "portfolio",
     title: "Rank Portfolio Readiness",
-    route: "/portfolio",
+    route: "/portfolio?preset=top-candidates",
     durationSec: 40,
     objective: "Show aggregator prioritization across sites.",
     talkTrack: "The portfolio engine ranks sites by forecasted headroom, reserve policy, and confidence."
@@ -24,7 +24,7 @@ const sequence = [
   {
     id: "dispatch",
     title: "Execute Safe Dispatch",
-    route: "/",
+    route: "/?demoScene=dispatch-grid-stress",
     durationSec: 50,
     objective: "Trigger NESO dispatch and show safety constraints and fail-safe behavior.",
     talkTrack: "Dispatch is allowed only if reserve, control-link, and load constraints all pass."
@@ -32,7 +32,7 @@ const sequence = [
   {
     id: "proof",
     title: "Prove Value and Reporting",
-    route: "/revenue",
+    route: "/revenue?preset=investor-proof",
     durationSec: 35,
     objective: "Show value capture, service mix, and reporting outputs.",
     talkTrack: "Commercial and operations stakeholders get clear, exportable performance evidence."
@@ -40,7 +40,7 @@ const sequence = [
   {
     id: "roi",
     title: "Counterfactual Economics",
-    route: "/roi-studio",
+    route: "/roi-studio?preset=tier2-colo",
     durationSec: 45,
     objective: "Quantify with-vs-without VoltPilot outcomes.",
     talkTrack: "This converts technical capability into an investment case and pilot scope discussion."

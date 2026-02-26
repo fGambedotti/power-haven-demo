@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
+import { useSearchParams } from "next/navigation";
 import MapView from "./MapView";
 import regions from "../../data/uk_regions.json";
 import corridors from "../../data/transmission_lines.json";
@@ -34,6 +35,8 @@ export default function Dashboard() {
     triggerDispatch,
     updateSetting
   } = useSimulation(datacentres);
+  const searchParams = useSearchParams();
+  const appliedDemoSceneRef = useRef<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Datacentre");
   const [mapLayers, setMapLayers] = useState({
@@ -44,6 +47,7 @@ export default function Dashboard() {
   });
 
   const selectedDc = datacentres.find((dc) => dc.id === selectedId);
+  const activeDemoScene = searchParams.get("demoScene");
   const backupAtRisk = state.powerMw > 0 && state.socPct <= state.reservePct + 1;
   const nowHour = Math.floor(state.timeSeconds / 3600) % 24;
   const currentDemand = demandProfiles.today[nowHour] ?? 0;
@@ -104,6 +108,41 @@ export default function Dashboard() {
     }));
   }, [dispatchOrchestrationActive, portfolioAllocation, state.activeDispatch, state.batteryMw]);
 
+  useEffect(() => {
+    const scene = searchParams.get("demoScene");
+    if (!scene || appliedDemoSceneRef.current === scene) return;
+    appliedDemoSceneRef.current = scene;
+
+    if (scene === "dispatch-grid-stress") {
+      setSelectedId("DC-17");
+      setActiveTab("Dispatch");
+      updateSetting("gridStatus", "OK");
+      updateSetting("controlLinkOk", true);
+      updateSetting("autoDispatch", false);
+      updateSetting("reservePct", 25);
+      const timer = setTimeout(() => triggerDispatch(), 450);
+      return () => clearTimeout(timer);
+    }
+
+    if (scene === "dispatch-failsafe") {
+      setSelectedId("DC-18");
+      setActiveTab("Dispatch");
+      updateSetting("gridStatus", "FAILED");
+      updateSetting("controlLinkOk", false);
+      updateSetting("autoDispatch", false);
+      return;
+    }
+
+    if (scene === "dispatch-standby") {
+      setSelectedId("DC-13");
+      setActiveTab("Datacentre");
+      updateSetting("gridStatus", "OK");
+      updateSetting("controlLinkOk", true);
+      updateSetting("autoDispatch", false);
+      return;
+    }
+  }, [searchParams, setSelectedId, triggerDispatch, updateSetting]);
+
   return (
     <main className="mx-auto grid w-full max-w-[1440px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.5fr_0.9fr] lg:px-8">
       <section className="space-y-6">
@@ -125,6 +164,12 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {activeDemoScene && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-medium text-blue-800">
+            Demo preset active: <span className="font-bold">{activeDemoScene}</span>. Use `/demo-mode` scene links for presenter-guided states.
+          </div>
+        )}
 
         <RoleLens context="dispatch" />
 
