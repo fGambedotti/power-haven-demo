@@ -32,6 +32,10 @@ interface MapViewProps {
   selectedDatacentreId: string | null;
   highlightedCorridors: string[];
   dispatchLine: GeoJSON.FeatureCollection | null;
+  showRegions?: boolean;
+  showCorridors?: boolean;
+  showGeneration?: boolean;
+  showDatacentreLabels?: boolean;
   onSelectDatacentre: (id: string) => void;
 }
 
@@ -45,6 +49,10 @@ export default function MapView({
   selectedDatacentreId,
   highlightedCorridors,
   dispatchLine,
+  showRegions = true,
+  showCorridors = true,
+  showGeneration = true,
+  showDatacentreLabels = false,
   onSelectDatacentre
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -180,6 +188,22 @@ export default function MapView({
           "circle-stroke-width": 2
         }
       });
+      map.addLayer({
+        id: "datacentres-labels",
+        type: "symbol",
+        source: "datacentres",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": 10,
+          "text-offset": [0, 1.3],
+          visibility: showDatacentreLabels ? "visible" : "none"
+        },
+        paint: {
+          "text-color": "#334155",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1
+        }
+      });
 
       map.addLayer({
         id: "datacentres-selected",
@@ -244,9 +268,33 @@ export default function MapView({
         type: "line",
         source: "dispatch",
         paint: {
-          "line-color": "#f59e0b",
-          "line-width": 4,
-          "line-opacity": 0.95,
+          "line-color": [
+            "match",
+            ["get", "tier"],
+            "primary",
+            "#f59e0b",
+            "secondary",
+            "#38bdf8",
+            "#94a3b8"
+          ],
+          "line-width": [
+            "match",
+            ["get", "tier"],
+            "primary",
+            4.5,
+            "secondary",
+            3,
+            2.5
+          ],
+          "line-opacity": [
+            "match",
+            ["get", "tier"],
+            "primary",
+            0.95,
+            "secondary",
+            0.7,
+            0.45
+          ],
           "line-dasharray": [1, 1.4]
         }
       });
@@ -271,7 +319,7 @@ export default function MapView({
       map.remove();
       mapRef.current = null;
     };
-  }, [regions, corridors, datacentreGeo, generationGeo, selectedDatacentreId, dispatchLine, onSelectDatacentre]);
+  }, [regions, corridors, datacentreGeo, generationGeo, selectedDatacentreId, dispatchLine, showDatacentreLabels, onSelectDatacentre]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -299,6 +347,34 @@ export default function MapView({
     const source = map.getSource("dispatch") as maplibregl.GeoJSONSource | undefined;
     if (source) source.setData(dispatchLine ?? { type: "FeatureCollection", features: [] });
   }, [dispatchLine]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (map.getLayer("regions-fill")) map.setLayoutProperty("regions-fill", "visibility", showRegions ? "visible" : "none");
+    if (map.getLayer("regions-outline")) map.setLayoutProperty("regions-outline", "visibility", showRegions ? "visible" : "none");
+  }, [showRegions]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (map.getLayer("corridors-line")) map.setLayoutProperty("corridors-line", "visibility", showCorridors ? "visible" : "none");
+    if (map.getLayer("corridors-highlight")) map.setLayoutProperty("corridors-highlight", "visibility", showCorridors ? "visible" : "none");
+  }, [showCorridors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (map.getLayer("generation-points")) map.setLayoutProperty("generation-points", "visibility", showGeneration ? "visible" : "none");
+  }, [showGeneration]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (map.getLayer("datacentres-labels")) {
+      map.setLayoutProperty("datacentres-labels", "visibility", showDatacentreLabels ? "visible" : "none");
+    }
+  }, [showDatacentreLabels]);
 
   return <div className="maplibre-container overflow-hidden rounded-2xl border border-slate-200 bg-white" ref={containerRef} />;
 }

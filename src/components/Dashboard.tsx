@@ -36,39 +36,73 @@ export default function Dashboard() {
   } = useSimulation(datacentres);
 
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Datacentre");
+  const [mapLayers, setMapLayers] = useState({
+    regions: true,
+    corridors: true,
+    generation: true,
+    labels: false
+  });
 
   const selectedDc = datacentres.find((dc) => dc.id === selectedId);
-
-  const dispatchLine = useMemo(() => {
-    if (!selectedDc || (!dispatchPulse && !state.activeDispatch)) return null;
-    return {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          properties: {},
-          geometry: {
-            type: "LineString",
-            coordinates: [
-              [-1.7, 52.7],
-              [selectedDc.lon, selectedDc.lat]
-            ]
-          }
-        }
-      ]
-    } as GeoJSON.FeatureCollection;
-  }, [selectedDc, dispatchPulse, state.activeDispatch]);
-
-  const highlightedCorridors = useMemo(() => {
-    if (!selectedDc || (!dispatchPulse && !state.activeDispatch)) return [] as string[];
-    return (corridors as GeoJSON.FeatureCollection).features
-      .filter((feature) => feature.properties?.near === selectedDc.region)
-      .map((feature) => String(feature.properties?.id ?? ""));
-  }, [selectedDc, dispatchPulse, state.activeDispatch]);
-
   const backupAtRisk = state.powerMw > 0 && state.socPct <= state.reservePct + 1;
   const nowHour = Math.floor(state.timeSeconds / 3600) % 24;
   const currentDemand = demandProfiles.today[nowHour] ?? 0;
+  const dispatchOrchestrationActive = Boolean(dispatchPulse || state.activeDispatch);
+
+  const portfolioAllocation = useMemo(() => {
+    const demandFactor = demandProfiles.today[nowHour] ?? 0.7;
+    return datacentres
+      .map((dc, idx) => {
+        const reservePenalty = dc.batteryMw * (state.reservePct / 100) * 0.25;
+        const regionalDemandPenalty = dc.region === selectedDc?.region ? 0 : demandFactor * 4;
+        const healthBias = (idx % 5) * 1.2;
+        const availableMw = Math.max(0, dc.batteryMw - reservePenalty - regionalDemandPenalty - healthBias);
+        const confidence = Math.max(72, Math.min(98, 90 - (idx % 6) * 3 + (dc.region === selectedDc?.region ? 4 : 0)));
+        const score = Math.round(availableMw * 0.75 + confidence * 0.35);
+        return { ...dc, availableMw: Math.round(availableMw * 10) / 10, confidence, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4);
+  }, [nowHour, selectedDc?.region, state.reservePct]);
+
+  const dispatchLine = useMemo(() => {
+    if (!selectedDc || !dispatchOrchestrationActive) return null;
+    return {
+      type: "FeatureCollection",
+      features: portfolioAllocation.map((candidate, index) => ({
+        type: "Feature",
+        properties: {
+          tier: candidate.id === selectedDc.id ? "primary" : index < 3 ? "secondary" : "candidate",
+          siteId: candidate.id
+        },
+        geometry: {
+          type: "LineString",
+          coordinates: [[-1.7, 52.7], [candidate.lon, candidate.lat]]
+        }
+      }))
+    } as GeoJSON.FeatureCollection;
+  }, [selectedDc, dispatchOrchestrationActive, portfolioAllocation]);
+
+  const highlightedCorridors = useMemo(() => {
+    if (!selectedDc || !dispatchOrchestrationActive) return [] as string[];
+    const activeRegions = new Set(portfolioAllocation.slice(0, 3).map((c) => c.region));
+    return (corridors as GeoJSON.FeatureCollection).features
+      .filter((feature) => activeRegions.has(String(feature.properties?.near ?? "")))
+      .map((feature) => String(feature.properties?.id ?? ""));
+  }, [selectedDc, dispatchOrchestrationActive, portfolioAllocation]);
+
+  const allocationRows = useMemo(() => {
+    if (!dispatchOrchestrationActive) return [] as Array<{ id: string; name: string; role: "Primary" | "Secondary"; mw: number; confidence: number }>;
+    const targetMw = state.activeDispatch?.targetMw ?? Math.max(10, Math.round(state.batteryMw * 0.65));
+    const weights = [0.5, 0.3, 0.2, 0];
+    return portfolioAllocation.slice(0, 3).map((dc, idx) => ({
+      id: dc.id,
+      name: dc.name,
+      role: idx === 0 ? "Primary" : "Secondary",
+      mw: Math.round(Math.min(dc.availableMw, targetMw * weights[idx]) * 10) / 10,
+      confidence: dc.confidence
+    }));
+  }, [dispatchOrchestrationActive, portfolioAllocation, state.activeDispatch, state.batteryMw]);
 
   return (
     <main className="mx-auto grid w-full max-w-[1440px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.5fr_0.9fr] lg:px-8">
@@ -148,8 +182,63 @@ export default function Dashboard() {
               selectedDatacentreId={selectedId}
               highlightedCorridors={highlightedCorridors}
               dispatchLine={dispatchLine}
+              showRegions={mapLayers.regions}
+              showCorridors={mapLayers.corridors}
+              showGeneration={mapLayers.generation}
+              showDatacentreLabels={mapLayers.labels}
               onSelectDatacentre={setSelectedId}
             />
+            <div className="mt-4 grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Aggregator allocation preview</p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {dispatchOrchestrationActive
+                    ? "Primary and secondary routing candidates are visualized to show portfolio-level dispatch orchestration."
+                    : "Trigger a dispatch to preview multi-site route allocation and corridor impact."}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <MiniToggle label="Regions" enabled={mapLayers.regions} onToggle={() => setMapLayers((prev) => ({ ...prev, regions: !prev.regions }))} />
+                  <MiniToggle label="Corridors" enabled={mapLayers.corridors} onToggle={() => setMapLayers((prev) => ({ ...prev, corridors: !prev.corridors }))} />
+                  <MiniToggle label="Generation" enabled={mapLayers.generation} onToggle={() => setMapLayers((prev) => ({ ...prev, generation: !prev.generation }))} />
+                  <MiniToggle label="DC labels" enabled={mapLayers.labels} onToggle={() => setMapLayers((prev) => ({ ...prev, labels: !prev.labels }))} />
+                </div>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-100 text-slate-600">
+                    <tr>
+                      <th className="px-2 py-2 text-left">Site</th>
+                      <th className="px-2 py-2 text-left">Role</th>
+                      <th className="px-2 py-2 text-right">MW</th>
+                      <th className="px-2 py-2 text-right">Conf.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allocationRows.length === 0 ? (
+                      <tr>
+                        <td className="px-2 py-3 text-slate-500" colSpan={4}>No active dispatch allocation.</td>
+                      </tr>
+                    ) : (
+                      allocationRows.map((row) => (
+                        <tr key={row.id} className="border-t border-slate-100">
+                          <td className="px-2 py-2 font-semibold text-slate-700">{row.name}</td>
+                          <td className="px-2 py-2">
+                            <span className={clsx(
+                              "rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]",
+                              row.role === "Primary" ? "bg-amber-100 text-amber-700" : "bg-cyan-100 text-cyan-700"
+                            )}>
+                              {row.role}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2 text-right text-slate-700">{row.mw}</td>
+                          <td className="px-2 py-2 text-right text-slate-700">{row.confidence}%</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -401,6 +490,20 @@ function LegendDot({ color, label }: { color: string; label: string }) {
       <span className={clsx("h-2.5 w-2.5 rounded-full", color)} />
       {label}
     </span>
+  );
+}
+
+function MiniToggle({ label, enabled, onToggle }: { label: string; enabled: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={clsx(
+        "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] transition",
+        enabled ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-500"
+      )}
+    >
+      {label}
+    </button>
   );
 }
 
