@@ -11,6 +11,7 @@ import generationSites from "../../data/generation_sites.json";
 import datacentres from "../../data/datacentres.json";
 import demandProfiles from "../../data/demand_profiles.json";
 import { useSimulation } from "../lib/useSimulation";
+import { useAudienceMode } from "./AudienceMode";
 import { applyDashboardBootstrapSettings, getDashboardSceneBootstrap } from "../lib/demoBootstrap";
 
 const tabs = ["Datacentre", "Dispatch", "Settings"] as const;
@@ -30,6 +31,7 @@ type GenerationSiteRecord = {
 };
 
 export default function Dashboard() {
+  const { mode } = useAudienceMode();
   const {
     state,
     eventLog,
@@ -173,6 +175,19 @@ export default function Dashboard() {
   }, [replayPlaying, replayFrames.length]);
 
   useEffect(() => {
+    if (mode === "Technical") {
+      setShowTechnicalView(true);
+      setMapLayers((prev) => ({ ...prev, regions: true, labels: true }));
+    } else if (mode === "Operator") {
+      setShowTechnicalView(false);
+      setMapLayers((prev) => ({ ...prev, regions: false, generation: false, labels: true }));
+    } else {
+      setShowTechnicalView(false);
+      setMapLayers((prev) => ({ ...prev, regions: false, generation: true, labels: true }));
+    }
+  }, [mode]);
+
+  useEffect(() => {
     const scene = searchParams.get("demoScene");
     if (!scene || appliedDemoSceneRef.current === scene) return;
     appliedDemoSceneRef.current = scene;
@@ -193,12 +208,16 @@ export default function Dashboard() {
         <div className="panel p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Investor Demo · Interactive Scenario</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">{mode} Mode · Interactive Scenario</p>
               <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                 VoltPilot safely turns backup batteries into grid flexibility
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Simple scenario playback showing what happens when a NESO dispatch arrives and how backup reserve remains protected.
+                {mode === "Investor"
+                  ? "Simple scenario playback showing how VoltPilot monetizes idle backup batteries while preserving resilience."
+                  : mode === "Operator"
+                    ? "Operational view focused on uptime protection, dispatch behavior, and what changes at the site."
+                    : "Technical validation view showing dispatch behavior, constraint enforcement, and execution telemetry."}
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -230,8 +249,18 @@ export default function Dashboard() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard title="Backup Status" value={backupAtRisk || state.failSafeMode ? (state.failSafeMode ? "Fail-safe" : "Warning") : "Protected"} note="Click to review safety controls" tone={backupAtRisk || state.failSafeMode ? "warn" : "accent"} onClick={() => setActiveTab("Settings")} />
           <MetricCard title="Battery SoC" value={`${state.socPct.toFixed(1)}%`} note={`Reserve floor ${state.reservePct}% · Click for site`} onClick={() => setActiveTab("Datacentre")} />
-          <MetricCard title="Flexibility Available" value={`${flex.availableFlexMw.toFixed(1)} MW`} note={(state.failSafeMode ? "Blocked by fail-safe" : "Ready for dispatch") + " · Click for action"} onClick={() => setActiveTab("Dispatch")} />
-          <MetricCard title="Today's Revenue" value={formatCurrency(state.todayRevenue)} note={`Service: ${state.activeService ?? "Standby"} · Live sim`} onClick={() => window.location.assign("/roi-studio")} />
+          <MetricCard
+            title={mode === "Operator" ? "Uptime Risk" : "Flexibility Available"}
+            value={mode === "Operator" ? (state.failSafeMode ? "Low (Protected)" : backupAtRisk ? "Watch" : "Low") : `${flex.availableFlexMw.toFixed(1)} MW`}
+            note={(mode === "Operator" ? "Derived from reserve + fail-safe checks" : state.failSafeMode ? "Blocked by fail-safe" : "Ready for dispatch") + " · Click for action"}
+            onClick={() => setActiveTab("Dispatch")}
+          />
+          <MetricCard
+            title={mode === "Technical" ? "Dispatch State" : "Today's Revenue"}
+            value={mode === "Technical" ? (state.activeDispatch ? state.activeDispatch.eventId : "Standby") : formatCurrency(state.todayRevenue)}
+            note={mode === "Technical" ? `Service: ${state.activeService ?? "None"} · Trace below` : `Service: ${state.activeService ?? "Standby"} · Live sim`}
+            onClick={() => (mode === "Technical" ? setShowTechnicalView(true) : window.location.assign("/roi-studio"))}
+          />
         </div>
 
         <div className="panel p-5 sm:p-6">
@@ -302,8 +331,12 @@ export default function Dashboard() {
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Dispatch Plan (Portfolio)</p>
                 <p className="mt-1 text-sm text-slate-700">
                   {dispatchOrchestrationActive
-                    ? "VoltPilot splits the dispatch across the best-ready sites while protecting reserve policy."
-                    : "Trigger a dispatch to show how VoltPilot selects and splits a grid instruction across the portfolio."}
+                    ? mode === "Operator"
+                      ? "This is the dispatch plan VoltPilot would execute across eligible sites while keeping backup reserve protected."
+                      : "VoltPilot splits the dispatch across the best-ready sites while protecting reserve policy."
+                    : mode === "Operator"
+                      ? "Trigger a dispatch to see which sites are selected and how much power each contributes."
+                      : "Trigger a dispatch to show how VoltPilot selects and splits a grid instruction across the portfolio."}
                 </p>
                 <div className="mt-3 space-y-2">
                   {allocationRows.length === 0 ? (
@@ -336,7 +369,7 @@ export default function Dashboard() {
                   <MiniToggle label="Gen sites" enabled={mapLayers.generation} onToggle={() => setMapLayers((prev) => ({ ...prev, generation: !prev.generation }))} />
                 </div>
               </div>
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className={clsx("overflow-hidden rounded-xl border border-slate-200 bg-white", mode === "Operator" && "hidden lg:block")}>
                 <table className="w-full text-xs">
                   <thead className="bg-slate-100 text-slate-600">
                     <tr>

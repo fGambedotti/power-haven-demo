@@ -34,3 +34,27 @@ export function StatTile({ label, value, note }: { label: string; value: string;
     </div>
   );
 }
+
+export function AssumptionsPanel({
+  title = "Assumptions",
+  items
+}: {
+  title?: string;
+  items: string[];
+}) {
+  return (
+    <details className="panel p-4 sm:p-5">
+      <summary className="cursor-pointer list-none text-sm font-semibold text-slate-900">
+        {title}
+        <span className="ml-2 text-xs font-medium text-slate-500">Click to expand</span>
+      </summary>
+      <ul className="mt-3 space-y-2 text-sm text-slate-700">
+        {items.map((item) => (
+          <li key={item} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
