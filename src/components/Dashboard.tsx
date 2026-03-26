@@ -30,6 +30,8 @@ type GenerationSiteRecord = {
   lon: number;
 };
 
+type SiteStatus = "operational" | "under_construction";
+
 export default function Dashboard() {
   const { mode } = useAudienceMode();
   const {
@@ -61,6 +63,15 @@ export default function Dashboard() {
   const [showTechnicalView, setShowTechnicalView] = useState(false);
   const [replayCursor, setReplayCursor] = useState(0);
   const [replayPlaying, setReplayPlaying] = useState(false);
+  const [portfolioActiveIds, setPortfolioActiveIds] = useState<string[]>(["DC-17", "DC-18", "DC-09", "DC-13"]);
+  const [mapStatusFilter, setMapStatusFilter] = useState<"all" | SiteStatus | "portfolio">("all");
+  const [mapRegionFilter, setMapRegionFilter] = useState<string>("all");
+  const [showImpactModal, setShowImpactModal] = useState(false);
+  const [liveContext, setLiveContext] = useState({
+    carbonIntensity: 125,
+    servicePrice: 58,
+    updatedAtLabel: "simulated"
+  });
 
   const selectedDc = datacentres.find((dc) => dc.id === selectedId);
   const activeDemoScene = searchParams.get("demoScene");
@@ -91,6 +102,58 @@ export default function Dashboard() {
       ? "Grid and control link are healthy."
       : "One or more safety conditions are blocking dispatch."
   ];
+  const regionOptions = useMemo(
+    () => ["all", ...Array.from(new Set(datacentres.map((dc) => dc.region))).sort((a, b) => a.localeCompare(b))],
+    []
+  );
+
+  const getSiteStatus = (dcId: string): SiteStatus => {
+    const numericId = Number(dcId.split("-")[1]);
+    return numericId >= 12 ? "under_construction" : "operational";
+  };
+
+  const filteredDatacentres = useMemo(() => {
+    return datacentres.filter((dc) => {
+      const regionMatch = mapRegionFilter === "all" || dc.region === mapRegionFilter;
+      const status = getSiteStatus(dc.id);
+      const statusMatch =
+        mapStatusFilter === "all"
+          ? true
+          : mapStatusFilter === "portfolio"
+            ? portfolioActiveIds.includes(dc.id)
+            : status === mapStatusFilter;
+      return regionMatch && statusMatch;
+    });
+  }, [mapRegionFilter, mapStatusFilter, portfolioActiveIds]);
+
+  const portfolioImpact = useMemo(() => {
+    const targets = datacentres.filter((dc) => portfolioActiveIds.includes(dc.id));
+    const result = targets.reduce(
+      (acc, dc) => {
+        const enrolledMw = dc.batteryMw * 0.6;
+        const enrolledMwh = dc.batteryMwh * 0.6;
+        const grossRevenue = enrolledMwh * liveContext.servicePrice * 1200;
+        const dcRevenue = grossRevenue * 0.85;
+        const phRevenue = grossRevenue * 0.15;
+        const co2Avoided = (enrolledMwh * 1200 * liveContext.carbonIntensity) / 1000;
+        acc.sites += 1;
+        acc.enrolledMw += enrolledMw;
+        acc.dcRevenue += dcRevenue;
+        acc.phRevenue += phRevenue;
+        acc.co2Avoided += co2Avoided;
+        return acc;
+      },
+      { sites: 0, enrolledMw: 0, dcRevenue: 0, phRevenue: 0, co2Avoided: 0 }
+    );
+
+    return {
+      sites: result.sites,
+      enrolledMw: Math.round(result.enrolledMw),
+      dcRevenue: Math.round(result.dcRevenue),
+      phRevenue: Math.round(result.phRevenue),
+      co2Avoided: Math.round(result.co2Avoided)
+    };
+  }, [portfolioActiveIds, liveContext]);
 
   const portfolioAllocation = useMemo(() => {
     const demandFactor = demandProfiles.today[nowHour] ?? 0.7;
@@ -188,6 +251,44 @@ export default function Dashboard() {
   }, [mode]);
 
   useEffect(() => {
+    const updateLiveContext = async () => {
+      try {
+        const [carbonRes, nesoRes] = await Promise.all([
+          fetch("https://api.carbonintensity.org.uk/intensity"),
+          fetch("https://api.neso.energy/api/3/action/datastore_search?resource_id=0e14e21d-b2b7-461d-a524-0b3b53fa7c83&limit=1")
+        ]);
+        const carbonData = await carbonRes.json();
+        const nesoData = await nesoRes.json();
+        const carbon =
+          carbonData?.data?.[0]?.intensity?.actual ?? carbonData?.data?.[0]?.intensity?.forecast ?? 125;
+        const firstRecord = nesoData?.result?.records?.[0];
+        const nesoPriceRaw =
+          firstRecord?.["Clearing Price (£/MWh)"] ?? firstRecord?.clearingPrice ?? firstRecord?.price ?? 58;
+        const servicePrice = Number.parseFloat(String(nesoPriceRaw));
+        setLiveContext({
+          carbonIntensity: Number.isFinite(carbon) ? carbon : 125,
+          servicePrice: Number.isFinite(servicePrice) ? servicePrice : 58,
+          updatedAtLabel: "live"
+        });
+      } catch {
+        setLiveContext((prev) => ({ ...prev, updatedAtLabel: "fallback" }));
+      }
+    };
+
+    void updateLiveContext();
+    const timer = setInterval(updateLiveContext, 180000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const stillVisible = filteredDatacentres.some((dc) => dc.id === selectedId);
+    if (!stillVisible && filteredDatacentres[0]) {
+      setSelectedId(filteredDatacentres[0].id);
+    }
+  }, [filteredDatacentres, selectedId, setSelectedId]);
+
+  useEffect(() => {
     const scene = searchParams.get("demoScene");
     if (!scene || appliedDemoSceneRef.current === scene) return;
     appliedDemoSceneRef.current = scene;
@@ -245,6 +346,22 @@ export default function Dashboard() {
             Demo preset active: <span className="font-bold">{activeDemoScene}</span>. Use `/demo-mode` scene links for presenter-guided states.
           </div>
         )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <LiveChip label="Grid Carbon" value={`${Math.round(liveContext.carbonIntensity)} gCO2/kWh`} tone="emerald" />
+          <LiveChip label="DC Service Price" value={`£${liveContext.servicePrice.toFixed(2)}/MWh`} tone="blue" />
+          <LiveChip label="Context Source" value={liveContext.updatedAtLabel} tone="slate" />
+          <button
+            type="button"
+            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+            onClick={() => {
+              setPortfolioActiveIds(datacentres.map((dc) => dc.id));
+              setShowImpactModal(true);
+            }}
+          >
+            Activate Full Portfolio
+          </button>
+        </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard title="Backup Status" value={backupAtRisk || state.failSafeMode ? (state.failSafeMode ? "Fail-safe" : "Warning") : "Protected"} note="Click to review safety controls" tone={backupAtRisk || state.failSafeMode ? "warn" : "accent"} onClick={() => setActiveTab("Settings")} />
@@ -311,11 +428,28 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="p-4 sm:p-6">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <MiniToggle label="All Sites" enabled={mapStatusFilter === "all"} onToggle={() => setMapStatusFilter("all")} />
+              <MiniToggle label="Operational" enabled={mapStatusFilter === "operational"} onToggle={() => setMapStatusFilter("operational")} />
+              <MiniToggle label="Under Construction" enabled={mapStatusFilter === "under_construction"} onToggle={() => setMapStatusFilter("under_construction")} />
+              <MiniToggle label="VoltPilot Active" enabled={mapStatusFilter === "portfolio"} onToggle={() => setMapStatusFilter("portfolio")} />
+              <select
+                className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                value={mapRegionFilter}
+                onChange={(event) => setMapRegionFilter(event.target.value)}
+              >
+                {regionOptions.map((region) => (
+                  <option key={region} value={region}>
+                    {region === "all" ? "All Regions" : region}
+                  </option>
+                ))}
+              </select>
+            </div>
             <MapView
               ukOutline={ukOutline as GeoJSON.FeatureCollection}
               regions={regions as GeoJSON.FeatureCollection}
               corridors={corridors as GeoJSON.FeatureCollection}
-              datacentres={datacentres}
+              datacentres={filteredDatacentres}
               generationSites={generationSites as GenerationSiteRecord[]}
               selectedDatacentreId={selectedId}
               highlightedCorridors={highlightedCorridors}
@@ -338,6 +472,16 @@ export default function Dashboard() {
                       ? "Trigger a dispatch to see which sites are selected and how much power each contributes."
                       : "Trigger a dispatch to show how VoltPilot selects and splits a grid instruction across the portfolio."}
                 </p>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                    <p className="font-semibold text-slate-800">{portfolioImpact.sites}</p>
+                    <p className="text-slate-500">Active sites</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                    <p className="font-semibold text-slate-800">{portfolioImpact.enrolledMw} MW</p>
+                    <p className="text-slate-500">Enrolled flex</p>
+                  </div>
+                </div>
                 <div className="mt-3 space-y-2">
                   {allocationRows.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-slate-300 bg-white px-3 py-3 text-xs text-slate-500">
@@ -598,6 +742,26 @@ export default function Dashboard() {
                 ))}
               </select>
 
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                  onClick={() => setPortfolioActiveIds(portfolioAllocation.map((row) => row.id))}
+                >
+                  Activate Top 4 Sites
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                  onClick={() => {
+                    setPortfolioActiveIds(datacentres.map((dc) => dc.id));
+                    setShowImpactModal(true);
+                  }}
+                >
+                  Enrol All (Demo)
+                </button>
+              </div>
+
               {selectedDc && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="font-display text-lg font-semibold text-slate-900">{selectedDc.name}</p>
@@ -608,6 +772,24 @@ export default function Dashboard() {
                     <DataChip label="Baseline" value={`${selectedDc.baselineLoadMw} MW`} />
                     <DataChip label="Demand" value={`${(currentDemand * 100).toFixed(0)}%`} />
                   </div>
+                  <button
+                    type="button"
+                    className={clsx(
+                      "mt-4 w-full rounded-lg px-3 py-2 text-sm font-semibold",
+                      portfolioActiveIds.includes(selectedDc.id)
+                        ? "bg-emerald-600 text-white"
+                        : "border border-slate-300 bg-white text-slate-700"
+                    )}
+                    onClick={() =>
+                      setPortfolioActiveIds((prev) =>
+                        prev.includes(selectedDc.id)
+                          ? prev.filter((id) => id !== selectedDc.id)
+                          : [...prev, selectedDc.id]
+                      )
+                    }
+                  >
+                    {portfolioActiveIds.includes(selectedDc.id) ? "VoltPilot Active" : "Activate in VoltPilot"}
+                  </button>
                 </div>
               )}
             </div>
@@ -722,6 +904,47 @@ export default function Dashboard() {
           </p>
         </div>
       </aside>
+
+      {showImpactModal && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 px-4">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Portfolio Impact</p>
+            <h3 className="mt-1 font-display text-2xl font-semibold text-slate-900">
+              VoltPilot full-portfolio scenario
+            </h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Illustrative annual impact if all currently visible sites are activated under current service-price assumptions.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <ImpactStat label="Active sites" value={`${portfolioImpact.sites}`} />
+              <ImpactStat label="Enrolled flexibility" value={`${portfolioImpact.enrolledMw} MW`} />
+              <ImpactStat label="Datacentre revenue" value={formatCurrency(portfolioImpact.dcRevenue)} />
+              <ImpactStat label="VoltPilot revenue" value={formatCurrency(portfolioImpact.phRevenue)} />
+              <ImpactStat label="CO2 avoided" value={`${portfolioImpact.co2Avoided.toLocaleString()} t`} />
+              <ImpactStat label="Service price input" value={`£${liveContext.servicePrice.toFixed(2)}/MWh`} />
+            </div>
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                onClick={() => {
+                  setShowImpactModal(false);
+                  window.location.assign("/roi-studio");
+                }}
+              >
+                Open ROI Studio
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+                onClick={() => setShowImpactModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -752,6 +975,32 @@ function ReplayMetric({
       <div className="mt-2 h-1.5 rounded-full bg-slate-100">
         <div className={clsx("h-1.5 rounded-full transition-all", toneClass)} style={{ width: `${Math.max(0, Math.min(ratio, 1)) * 100}%` }} />
       </div>
+    </div>
+  );
+}
+
+function LiveChip({
+  label,
+  value,
+  tone
+}: {
+  label: string;
+  value: string;
+  tone: "emerald" | "blue" | "slate";
+}) {
+  const toneClass = tone === "emerald" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : tone === "blue" ? "bg-blue-50 border-blue-200 text-blue-800" : "bg-slate-50 border-slate-200 text-slate-700";
+  return (
+    <div className={clsx("rounded-full border px-3 py-1.5 text-xs", toneClass)}>
+      <span className="font-semibold">{label}:</span> {value}
+    </div>
+  );
+}
+
+function ImpactStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-1 font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
