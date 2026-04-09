@@ -12,11 +12,32 @@
   --text-med: #475569;
   --text-soft: #64748b;
   --line: rgba(148, 163, 184, 0.28);
+  --ph-bg: #060d1b;
+  --ph-bg-card: #0b1527;
+  --ph-bg-warm: #0a1323;
+  --ph-surface: #0f1e35;
+  --ph-accent: #22d3ee;
+  --ph-accent-magenta: #ff38c7;
+  --ph-accent-blue: #0ea5e9;
+  --ph-accent-glow: rgba(34, 211, 238, 0.16);
+  --ph-section-alt: #081524;
+  --ph-accent-blue: #0ea5e9;
+  --ph-accent-glow: rgba(2, 195, 154, 0.15);
+  --ph-section-alt: #081524;
+  --ph-text: #ffffff;
+  --ph-text-soft: #7a90aa;
+  --ph-text-muted: #627a97;
+  --ph-divider: #162234;
+  --ph-light: #f0f4f8;
 }
 
 html,
 body {
   height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -72,5 +93,79 @@ body {
   50% {
     transform: scale(1.02);
     opacity: 0.84;
+  }
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--ph-accent);
+  outline-offset: 2px;
+}
+
+.ph-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ph-accent);
+}
+
+.ph-grid-lines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 52px 52px;
+  opacity: 0.35;
+  animation: ph-grid-drift 24s linear infinite;
+}
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-scroll-indicator {
+  opacity: 0;
+  animation: ph-scroll-indicator 2.2s ease 2s forwards;
+}
+
+@keyframes ph-grid-drift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 52px 52px, 52px 52px;
+  }
+}
+
+@keyframes ph-scroll-indicator {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .hero-scroll-indicator,
+  .ph-grid-lines::before,
+  .reveal-on-scroll.is-visible {
+    animation: none !important;
+    transition: none !important;
   }
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+export { default as ProductUI } from "./LandingProductUI";
 
 export function PageHero({
   eyebrow,

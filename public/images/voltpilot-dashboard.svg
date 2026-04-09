@@ -1,0 +1,35 @@
+<svg width="880" height="640" viewBox="0 0 880 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="880" height="640" rx="24" fill="#081226"/>
+  <rect x="24" y="24" width="832" height="68" rx="14" fill="#0D1C33"/>
+  <circle cx="58" cy="58" r="8" fill="#02C39A"/>
+  <circle cx="84" cy="58" r="8" fill="#25405E"/>
+  <circle cx="110" cy="58" r="8" fill="#25405E"/>
+  <rect x="138" y="46" width="210" height="24" rx="8" fill="#172842"/>
+  <rect x="40" y="122" width="248" height="472" rx="16" fill="#0D1C33"/>
+  <rect x="312" y="122" width="528" height="302" rx="16" fill="#0D1C33"/>
+  <rect x="312" y="442" width="255" height="152" rx="16" fill="#0D1C33"/>
+  <rect x="585" y="442" width="255" height="152" rx="16" fill="#0D1C33"/>
+
+  <text x="62" y="164" fill="#7A90AA" font-size="13" font-family="Arial, sans-serif">ANM Pathways</text>
+  <text x="334" y="164" fill="#7A90AA" font-size="13" font-family="Arial, sans-serif">Live Dispatch</text>
+  <text x="334" y="484" fill="#7A90AA" font-size="13" font-family="Arial, sans-serif">Revenue Projection</text>
+  <text x="607" y="484" fill="#7A90AA" font-size="13" font-family="Arial, sans-serif">Queue Reduction</text>
+
+  <path d="M62 214H266" stroke="#1E3556" stroke-width="2"/>
+  <path d="M62 262H266" stroke="#1E3556" stroke-width="2"/>
+  <path d="M62 310H266" stroke="#1E3556" stroke-width="2"/>
+  <path d="M62 358H266" stroke="#1E3556" stroke-width="2"/>
+
+  <path d="M336 350C380 312 422 292 456 304C502 320 526 266 570 270C607 272 634 304 676 300C711 296 740 258 814 238" stroke="#02C39A" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="456" cy="304" r="5" fill="#02C39A"/>
+  <circle cx="570" cy="270" r="5" fill="#02C39A"/>
+  <circle cx="676" cy="300" r="5" fill="#02C39A"/>
+
+  <rect x="336" y="466" width="207" height="16" rx="8" fill="#1D3251"/>
+  <rect x="336" y="498" width="172" height="12" rx="6" fill="#1D3251"/>
+  <rect x="336" y="526" width="188" height="12" rx="6" fill="#1D3251"/>
+
+  <rect x="607" y="466" width="74" height="74" rx="12" fill="#11263E"/>
+  <text x="625" y="510" fill="#02C39A" font-size="26" font-weight="700" font-family="Arial, sans-serif">-4Y</text>
+  <text x="699" y="510" fill="#7A90AA" font-size="12" font-family="Arial, sans-serif">typical wait</text>
+</svg>
