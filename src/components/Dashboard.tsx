@@ -380,6 +380,13 @@ export default function Dashboard() {
             onClick={() => (mode === "Technical" ? setShowTechnicalView(true) : window.location.assign("/roi-studio"))}
           />
         </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+          <span className="font-semibold">Grid Frequency:</span> {state.frequencyHz.toFixed(2)} Hz
+          <span className="mx-2 text-slate-400">|</span>
+          <span className="font-semibold">Trigger:</span> {state.frequencyTriggerHz.toFixed(2)} Hz
+          <span className="mx-2 text-slate-400">|</span>
+          <span className="font-semibold">Revenue:</span> {formatCurrency(state.todayRevenue)} + avoided energy {formatCurrency(state.energyCostAvoidedToday)}
+        </div>
 
         {state.calibrationMode === "RESEARCH" && (
           <div className="panel p-5 sm:p-6">
@@ -902,6 +909,22 @@ export default function Dashboard() {
                 caption="Fail-safe backup-only mode"
                 enabled={!state.controlLinkOk}
                 onToggle={(value) => updateSetting("controlLinkOk", !value)}
+              />
+
+              <SwitchField
+                label="ANM constraint active"
+                caption="Simulates network-operator curtailment obligation"
+                enabled={state.anmConstraintActive}
+                onToggle={(value) => updateSetting("anmConstraintActive", value)}
+              />
+
+              <RangeField
+                label="Round-trip efficiency"
+                value={state.roundTripEfficiency * 100}
+                min={80}
+                max={98}
+                suffix="%"
+                onChange={(value) => updateSetting("roundTripEfficiency", value / 100)}
               />
 
               <SwitchField

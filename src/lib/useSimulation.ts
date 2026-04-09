@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DispatchDecisionTrace, DispatchEvent, DispatchRequest, SimState, SimStepSnapshot } from "./types";
-import { applyDispatchRequest, computeFlex, initState, tickState } from "./simEngine";
+import type { DispatchDecisionTrace, DispatchEvent, DispatchRequest, DispatchService, SimState, SimStepSnapshot } from "./types";
+import { applyDispatchRequest, computeFlex, initState, servicePricingFor, tickState } from "./simEngine";
 import researchCalibration from "../../data/research_calibration.json";
 
 interface Datacentre {
@@ -16,7 +16,13 @@ interface Datacentre {
   region: string;
 }
 
-const SERVICES = ["Dynamic Containment", "Balancing Mechanism"] as const;
+const SERVICES: DispatchService[] = [
+  "Dynamic Containment",
+  "Dynamic Moderation",
+  "Dynamic Regulation",
+  "FFR",
+  "Balancing Mechanism"
+];
 const DEMO_LOOP_SECONDS = 180;
 
 function calculateLoad(baseline: number, timeSeconds: number): number {
@@ -54,7 +60,10 @@ export function useSimulation(datacentres: Datacentre[]) {
       selectedDatacentreId: dc.id,
       batteryMw: dc.batteryMw,
       batteryMwh: dc.batteryMwh,
-      baselineLoadMw: dc.baselineLoadMw
+      baselineLoadMw: dc.baselineLoadMw,
+      effectiveBatteryMwh: dc.batteryMwh,
+      contractedMw: Math.max(1, dc.batteryMw * 0.6),
+      rampRateMwPerSec: Math.max(0.01, (Math.max(1, dc.batteryMw * 0.6) * 0.05) / 60)
     }));
   }, [selectedId, datacentres]);
 
@@ -95,9 +104,13 @@ export function useSimulation(datacentres: Datacentre[]) {
             : baseLoad;
         const withLoad = { ...prev, loadSpikeMw: updatedLoad };
         withLoad.researchHour = researchSignal.hour;
-        withLoad.serviceRateGbpPerMwh = prev.calibrationMode === "RESEARCH" ? researchSignal.dayAheadPrice : prev.serviceRateGbpPerMwh;
+        withLoad.dayAheadPriceGbpPerMwh = researchSignal.dayAheadPrice;
+        withLoad.serviceRateGbpPerMwh = prev.calibrationMode === "RESEARCH"
+          ? researchSignal.researchServiceRate
+          : prev.serviceRateGbpPerMwh;
         withLoad.flexibilityIndex = prev.calibrationMode === "RESEARCH" ? researchSignal.flexibilityIndex : 1;
         withLoad.maxFlexDurationMin = prev.calibrationMode === "RESEARCH" ? researchSignal.maxFlexDurationMin : 90;
+        withLoad.frequencyHz = researchSignal.frequencyHz;
         const result = tickState(withLoad, 1);
 
         if (result.curtailed && prev.activeDispatch) {
@@ -164,7 +177,12 @@ export function useSimulation(datacentres: Datacentre[]) {
           return looped;
         }
 
-        if (result.state.autoDispatch && !result.state.activeDispatch && result.state.timeSeconds % 45 === 0) {
+        const frequencyTriggered =
+          !result.state.activeDispatch && result.state.frequencyHz <= result.state.frequencyTriggerHz;
+
+        if ((result.state.autoDispatch && !result.state.activeDispatch && result.state.timeSeconds % 45 === 0) || frequencyTriggered) {
+          const service = selectBestService(result.state);
+          const pricing = servicePricingFor(service);
           const calibratedTarget =
             result.state.calibrationMode === "RESEARCH"
               ? result.state.batteryMw * (0.35 + 0.45 * result.state.flexibilityIndex)
@@ -174,7 +192,7 @@ export function useSimulation(datacentres: Datacentre[]) {
               ? Math.max(20, Math.min(120, Math.round(result.state.maxFlexDurationMin * 1.8)))
               : 30;
           const request: DispatchRequest = {
-            service: SERVICES[result.state.timeSeconds % 2],
+            service,
             direction: result.state.socPct > 55 ? "DISCHARGE" : "CHARGE",
             targetMw: Math.max(10, Math.round(calibratedTarget)),
             durationSec: calibratedDuration
@@ -182,7 +200,18 @@ export function useSimulation(datacentres: Datacentre[]) {
           const id = `EV-${String(idCounter.current++).padStart(3, "0")}`;
           const trace = buildDecisionTrace(result.state, request, id);
           setDecisionTraces((traces) => [trace, ...traces].slice(0, 20));
-          const resultDispatch = applyDispatchRequest(result.state, request, id);
+          const resultDispatch = applyDispatchRequest(
+            {
+              ...result.state,
+              availabilityRateGbpPerMwH: pricing.availabilityGbpPerMwH,
+              activationRateGbpPerMwh:
+                result.state.calibrationMode === "RESEARCH"
+                  ? result.state.serviceRateGbpPerMwh
+                  : pricing.activationGbpPerMwh
+            },
+            request,
+            id
+          );
           setDecisionTraces((traces) =>
             traces.map((t) =>
               t.eventId === id
@@ -232,8 +261,10 @@ export function useSimulation(datacentres: Datacentre[]) {
         prev.calibrationMode === "RESEARCH"
           ? Math.max(20, Math.min(120, Math.round(prev.maxFlexDurationMin * 2)))
           : 30;
+      const service = selectBestService(prev);
+      const pricing = servicePricingFor(service);
       const request: DispatchRequest = {
-        service: SERVICES[Math.floor(prev.timeSeconds) % 2],
+        service,
         direction: prev.socPct > 55 ? "DISCHARGE" : "CHARGE",
         targetMw: Math.max(10, Math.round(calibratedTarget)),
         durationSec: calibratedDuration
@@ -241,7 +272,18 @@ export function useSimulation(datacentres: Datacentre[]) {
       const id = `EV-${String(idCounter.current++).padStart(3, "0")}`;
       const trace = buildDecisionTrace(prev, request, id);
       setDecisionTraces((traces) => [trace, ...traces].slice(0, 20));
-      const result = applyDispatchRequest(prev, request, id);
+      const result = applyDispatchRequest(
+        {
+          ...prev,
+          availabilityRateGbpPerMwH: pricing.availabilityGbpPerMwH,
+          activationRateGbpPerMwh:
+            prev.calibrationMode === "RESEARCH"
+              ? prev.serviceRateGbpPerMwh
+              : pricing.activationGbpPerMwh
+        },
+        request,
+        id
+      );
       setDecisionTraces((traces) =>
         traces.map((t) =>
           t.eventId === id
@@ -294,6 +336,7 @@ function getResearchSignal(timeSeconds: number, loopSeconds: number) {
   const totalWorkloadRatio = (researchCalibration.totalWorkloadProposedPct[hour] ?? 60) / 100;
   const flexibleRatio = (researchCalibration.flexibleWorkloadProposedPct[hour] ?? 35) / 100;
   const dayAheadPrice = researchCalibration.dayAheadPriceGbpPerMwh[hour] ?? 58;
+  const researchServiceRate = researchCalibration.researchFlexServiceRateGbpPerMwh[hour] ?? 24;
 
   const deferral30 = researchCalibration.deferralWindowDistributionPct.lte30min[hour] ?? 25;
   const deferral60 = researchCalibration.deferralWindowDistributionPct.lte60min[hour] ?? 20;
@@ -312,9 +355,26 @@ function getResearchSignal(timeSeconds: number, loopSeconds: number) {
     totalWorkloadRatio,
     flexibleRatio,
     dayAheadPrice,
+    researchServiceRate,
     flexibilityIndex,
-    maxFlexDurationMin
+    maxFlexDurationMin,
+    frequencyHz: researchCalibration.frequencyHzProfile[hour] ?? 50
   };
+}
+
+function selectBestService(state: SimState): DispatchService {
+  let best = SERVICES[0];
+  let bestScore = -Infinity;
+  for (const service of SERVICES) {
+    const pricing = servicePricingFor(service);
+    const activation = state.calibrationMode === "RESEARCH" ? state.serviceRateGbpPerMwh : pricing.activationGbpPerMwh;
+    const score = pricing.availabilityGbpPerMwH * state.contractedMw + activation * Math.max(1, state.batteryMw * 0.4);
+    if (score > bestScore) {
+      best = service;
+      bestScore = score;
+    }
+  }
+  return best;
 }
 
 function buildDecisionTrace(state: SimState, request: DispatchRequest, eventId: string): DispatchDecisionTrace {
@@ -338,6 +398,16 @@ function buildDecisionTrace(state: SimState, request: DispatchRequest, eventId: 
       rule: "Load threshold",
       passed: state.loadSpikeMw <= state.loadSpikeThresholdMw,
       detail: `${state.loadSpikeMw.toFixed(1)} / ${state.loadSpikeThresholdMw.toFixed(1)} MW`
+    },
+    {
+      rule: "Frequency trigger",
+      passed: state.frequencyHz <= state.frequencyTriggerHz || state.autoDispatch,
+      detail: `${state.frequencyHz.toFixed(2)} Hz (trigger ${state.frequencyTriggerHz.toFixed(2)} Hz)`
+    },
+    {
+      rule: "ANM constraint",
+      passed: !state.anmConstraintActive,
+      detail: state.anmConstraintActive ? "Active" : "Inactive"
     }
   ];
 

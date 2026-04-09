@@ -1,6 +1,11 @@
 export type GridStatus = "OK" | "FAILED";
 export type DispatchDirection = "DISCHARGE" | "CHARGE";
-export type DispatchService = "Dynamic Containment" | "Balancing Mechanism";
+export type DispatchService =
+  | "Dynamic Containment"
+  | "Dynamic Moderation"
+  | "Dynamic Regulation"
+  | "FFR"
+  | "Balancing Mechanism";
 
 export interface DispatchEvent {
   id: string;
@@ -46,6 +51,24 @@ export interface SimState {
   serviceRateGbpPerMwh: number;
   flexibilityIndex: number;
   maxFlexDurationMin: number;
+  frequencyHz: number;
+  frequencyTriggerHz: number;
+  contractedMw: number;
+  rampRateMwPerSec: number;
+  availabilityRateGbpPerMwH: number;
+  activationRateGbpPerMwh: number;
+  dayAheadPriceGbpPerMwh: number;
+  energyCostAvoidedToday: number;
+  roundTripEfficiency: number;
+  effectiveBatteryMwh: number;
+  cumulativeThroughputMwh: number;
+  degradationPctPerCycle: number;
+  coolingFlexMw: number;
+  coolingSaturationPct: number;
+  inletTempC: number;
+  maxInletTempC: number;
+  coolingRecoveryUntilSec: number | null;
+  anmConstraintActive: boolean;
 }
 
 export interface DispatchRequest {
