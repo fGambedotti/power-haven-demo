@@ -48,7 +48,8 @@ export default function Dashboard() {
     isPlaying,
     setIsPlaying,
     resetScenario,
-    demoLoopSeconds
+    demoLoopSeconds,
+    researchSignal
   } = useSimulation(datacentres);
   const searchParams = useSearchParams();
   const appliedDemoSceneRef = useRef<string | null>(null);
@@ -379,6 +380,20 @@ export default function Dashboard() {
             onClick={() => (mode === "Technical" ? setShowTechnicalView(true) : window.location.assign("/roi-studio"))}
           />
         </div>
+
+        {state.calibrationMode === "RESEARCH" && (
+          <div className="panel p-5 sm:p-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Research-Calibrated Mode</p>
+            <p className="mt-1 text-sm text-slate-600">
+              Dispatch envelope is calibrated using published workload flexibility and day-ahead pricing assumptions.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <DataChip label="Mapped hour" value={`${researchSignal.hour}:00`} />
+              <DataChip label="Flex index" value={`${(researchSignal.flexibilityIndex * 100).toFixed(0)}%`} />
+              <DataChip label="Max flex duration" value={`${state.maxFlexDurationMin} min`} />
+            </div>
+          </div>
+        )}
 
         <div className="panel p-5 sm:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -887,6 +902,13 @@ export default function Dashboard() {
                 caption="Fail-safe backup-only mode"
                 enabled={!state.controlLinkOk}
                 onToggle={(value) => updateSetting("controlLinkOk", !value)}
+              />
+
+              <SwitchField
+                label="Research-calibrated mode"
+                caption="Uses literature-calibrated workload flexibility and day-ahead pricing profile"
+                enabled={state.calibrationMode === "RESEARCH"}
+                onToggle={(value) => updateSetting("calibrationMode", value ? "RESEARCH" : "DEMO")}
               />
             </div>
           )}

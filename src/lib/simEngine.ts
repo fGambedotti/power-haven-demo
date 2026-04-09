@@ -29,7 +29,12 @@ export function initState(params: {
     activeService: null,
     todayRevenue: 0,
     dispatchAllowed: true,
-    failSafeMode: false
+    failSafeMode: false,
+    calibrationMode: "DEMO",
+    researchHour: 0,
+    serviceRateGbpPerMwh: 55,
+    flexibilityIndex: 1,
+    maxFlexDurationMin: 90
   };
 }
 
@@ -162,7 +167,9 @@ export function accrueRevenue(state: SimState, dtSec: number): number {
   if (!state.activeService || state.powerMw === 0) {
     return state.todayRevenue;
   }
-  const rate = SERVICE_RATES[state.activeService] ?? 40;
+  const rate = state.calibrationMode === "RESEARCH"
+    ? state.serviceRateGbpPerMwh
+    : SERVICE_RATES[state.activeService] ?? 40;
   const revenuePerSec = (rate * Math.abs(state.powerMw)) / 3600;
   return state.todayRevenue + revenuePerSec * dtSec;
 }
@@ -183,6 +190,6 @@ export function computeFlex(state: SimState): { reservedBackupPct: number; avail
     return { reservedBackupPct, availableFlexMw: 0 };
   }
   const availableEnergyMwh = Math.max(0, ((state.socPct - state.reservePct) / 100) * state.batteryMwh);
-  const availableFlexMw = Math.min(state.batteryMw, availableEnergyMwh);
+  const availableFlexMw = Math.min(state.batteryMw, availableEnergyMwh) * Math.max(0.2, Math.min(1, state.flexibilityIndex));
   return { reservedBackupPct, availableFlexMw };
 }

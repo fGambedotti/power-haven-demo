@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DispatchDecisionTrace, DispatchEvent, DispatchRequest, SimState, SimStepSnapshot } from "./types";
 import { applyDispatchRequest, computeFlex, initState, tickState } from "./simEngine";
+import researchCalibration from "../../data/research_calibration.json";
 
 interface Datacentre {
   id: string;
@@ -72,7 +73,8 @@ export function useSimulation(datacentres: Datacentre[]) {
         loadSpikeThresholdMw: prev.loadSpikeThresholdMw,
         autoDispatch: prev.autoDispatch,
         gridStatus: prev.gridStatus,
-        controlLinkOk: prev.controlLinkOk
+        controlLinkOk: prev.controlLinkOk,
+        calibrationMode: prev.calibrationMode
       };
     });
     setEventLog([]);
@@ -85,8 +87,17 @@ export function useSimulation(datacentres: Datacentre[]) {
     if (!isPlaying) return;
     const interval = setInterval(() => {
       setState((prev) => {
-        const updatedLoad = calculateLoad(prev.baselineLoadMw, prev.timeSeconds);
+        const researchSignal = getResearchSignal(prev.timeSeconds, DEMO_LOOP_SECONDS);
+        const baseLoad = calculateLoad(prev.baselineLoadMw, prev.timeSeconds);
+        const updatedLoad =
+          prev.calibrationMode === "RESEARCH"
+            ? baseLoad * (researchSignal.totalWorkloadRatio / 0.65)
+            : baseLoad;
         const withLoad = { ...prev, loadSpikeMw: updatedLoad };
+        withLoad.researchHour = researchSignal.hour;
+        withLoad.serviceRateGbpPerMwh = prev.calibrationMode === "RESEARCH" ? researchSignal.dayAheadPrice : prev.serviceRateGbpPerMwh;
+        withLoad.flexibilityIndex = prev.calibrationMode === "RESEARCH" ? researchSignal.flexibilityIndex : 1;
+        withLoad.maxFlexDurationMin = prev.calibrationMode === "RESEARCH" ? researchSignal.maxFlexDurationMin : 90;
         const result = tickState(withLoad, 1);
 
         if (result.curtailed && prev.activeDispatch) {
@@ -154,11 +165,19 @@ export function useSimulation(datacentres: Datacentre[]) {
         }
 
         if (result.state.autoDispatch && !result.state.activeDispatch && result.state.timeSeconds % 45 === 0) {
+          const calibratedTarget =
+            result.state.calibrationMode === "RESEARCH"
+              ? result.state.batteryMw * (0.35 + 0.45 * result.state.flexibilityIndex)
+              : result.state.batteryMw * 0.6;
+          const calibratedDuration =
+            result.state.calibrationMode === "RESEARCH"
+              ? Math.max(20, Math.min(120, Math.round(result.state.maxFlexDurationMin * 1.8)))
+              : 30;
           const request: DispatchRequest = {
             service: SERVICES[result.state.timeSeconds % 2],
             direction: result.state.socPct > 55 ? "DISCHARGE" : "CHARGE",
-            targetMw: Math.max(10, Math.round(result.state.batteryMw * 0.6)),
-            durationSec: 30
+            targetMw: Math.max(10, Math.round(calibratedTarget)),
+            durationSec: calibratedDuration
           };
           const id = `EV-${String(idCounter.current++).padStart(3, "0")}`;
           const trace = buildDecisionTrace(result.state, request, id);
@@ -205,11 +224,19 @@ export function useSimulation(datacentres: Datacentre[]) {
 
   const triggerDispatch = () => {
     setState((prev) => {
+      const calibratedTarget =
+        prev.calibrationMode === "RESEARCH"
+          ? prev.batteryMw * (0.4 + 0.45 * prev.flexibilityIndex)
+          : prev.batteryMw * 0.65;
+      const calibratedDuration =
+        prev.calibrationMode === "RESEARCH"
+          ? Math.max(20, Math.min(120, Math.round(prev.maxFlexDurationMin * 2)))
+          : 30;
       const request: DispatchRequest = {
         service: SERVICES[Math.floor(prev.timeSeconds) % 2],
         direction: prev.socPct > 55 ? "DISCHARGE" : "CHARGE",
-        targetMw: Math.max(10, Math.round(prev.batteryMw * 0.65)),
-        durationSec: 30
+        targetMw: Math.max(10, Math.round(calibratedTarget)),
+        durationSec: calibratedDuration
       };
       const id = `EV-${String(idCounter.current++).padStart(3, "0")}`;
       const trace = buildDecisionTrace(prev, request, id);
@@ -254,7 +281,39 @@ export function useSimulation(datacentres: Datacentre[]) {
     isPlaying,
     setIsPlaying,
     resetScenario,
-    demoLoopSeconds: DEMO_LOOP_SECONDS
+    demoLoopSeconds: DEMO_LOOP_SECONDS,
+    researchSignal: getResearchSignal(state.timeSeconds, DEMO_LOOP_SECONDS)
+  };
+}
+
+function getResearchSignal(timeSeconds: number, loopSeconds: number) {
+  const hour = Math.min(
+    23,
+    Math.max(0, Math.floor(((timeSeconds % loopSeconds) / loopSeconds) * 24))
+  );
+  const totalWorkloadRatio = (researchCalibration.totalWorkloadProposedPct[hour] ?? 60) / 100;
+  const flexibleRatio = (researchCalibration.flexibleWorkloadProposedPct[hour] ?? 35) / 100;
+  const dayAheadPrice = researchCalibration.dayAheadPriceGbpPerMwh[hour] ?? 58;
+
+  const deferral30 = researchCalibration.deferralWindowDistributionPct.lte30min[hour] ?? 25;
+  const deferral60 = researchCalibration.deferralWindowDistributionPct.lte60min[hour] ?? 20;
+  const deferral2h = researchCalibration.deferralWindowDistributionPct.lte2h[hour] ?? 20;
+  const deferral3h = researchCalibration.deferralWindowDistributionPct.lte3h[hour] ?? 35;
+  const weightedDeferralHours =
+    (deferral30 * 0.5 + deferral60 * 1 + deferral2h * 2 + deferral3h * 3) / 100;
+  const flexibilityIndex = Math.max(
+    0.25,
+    Math.min(1, flexibleRatio * (0.4 + weightedDeferralHours / 2.8))
+  );
+  const maxFlexDurationMin = Math.round(weightedDeferralHours * 45);
+
+  return {
+    hour,
+    totalWorkloadRatio,
+    flexibleRatio,
+    dayAheadPrice,
+    flexibilityIndex,
+    maxFlexDurationMin
   };
 }
 

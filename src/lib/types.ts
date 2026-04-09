@@ -41,6 +41,11 @@ export interface SimState {
   todayRevenue: number;
   dispatchAllowed: boolean;
   failSafeMode: boolean;
+  calibrationMode: "DEMO" | "RESEARCH";
+  researchHour: number;
+  serviceRateGbpPerMwh: number;
+  flexibilityIndex: number;
+  maxFlexDurationMin: number;
 }
 
 export interface DispatchRequest {
