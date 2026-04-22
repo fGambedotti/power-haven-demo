@@ -1,0 +1,37 @@
+[data-reveal],
+[data-stagger-group] > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 500ms ease-out, transform 500ms ease-out;
+}
+
+[data-reveal].is-visible,
+[data-stagger-group] > *.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-copy .headline-clip {
+  clip-path: inset(0 100% 0 0);
+  animation: headline-reveal 400ms ease-out forwards;
+}
+
+.hero-copy .headline-line:nth-child(2) .headline-clip {
+  animation-delay: 120ms;
+}
+
+@keyframes headline-reveal {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.hero-chart .chart-line {
+  stroke-dasharray: var(--dash-length, 1);
+  stroke-dashoffset: var(--dash-length, 1);
+  transition: stroke-dashoffset 800ms ease-out;
+}
+
+.hero-chart.chart-drawn .chart-line {
+  stroke-dashoffset: 0;
+}
