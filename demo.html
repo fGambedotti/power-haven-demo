@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Power Haven VoltPilot model workspace." />
+    <meta name="description" content="Power Haven VoltPilot scenario model workspace." />
     <title>Power Haven | Open the model</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,7 +17,7 @@
     <header class="site-header" id="top">
       <div class="container nav-row">
         <a href="index.html" class="brand" aria-label="Power Haven home">
-          <img src="assets/logo.svg" alt="Power Haven" width="162" height="28" />
+          <img class="brand-logo" src="assets/powerhaven-logo-blue-final.png" alt="Power Haven" width="152" height="52" />
         </a>
         <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-menu-toggle>
           Menu
@@ -33,24 +33,265 @@
     </header>
 
     <main>
-      <section class="section">
-        <div class="container narrow" data-reveal>
-          <h1 class="section-title">Open the model</h1>
-          <p class="section-lead">
-            This workspace is reserved for the live VoltPilot dispatch and flexibility model. The current prototype can
-            be accessed below while the production demo is being finalised.
-          </p>
-          <div class="card" data-reveal>
-            <p class="label">Current prototype</p>
-            <p>
-              Explore the existing simulation environment to inspect dispatch assumptions, market response behavior, and
-              operator-side controls.
+      <section class="section demo-section">
+        <div class="container demo-shell">
+          <div class="demo-heading" data-reveal>
+            <p class="label">Scenario Model</p>
+            <h1 class="section-title">Open the model</h1>
+            <p class="section-lead">
+              This lightweight demo uses pre-calculated historic scenarios to estimate how VoltPilot could have
+              dispatched a datacentre battery under representative 2024-2025 GB market conditions.
             </p>
-            <div class="hero-actions">
-              <a class="btn-primary" href="/demo-mode">Open current prototype</a>
-              <a class="btn-secondary" href="index.html">Back to landing page →</a>
-            </div>
+            <p class="demo-meta" id="dataset-meta">Loading scenario dataset…</p>
           </div>
+
+          <div class="demo-grid">
+            <article class="card demo-controls" data-reveal>
+              <div class="demo-card-head">
+                <h2>Inputs</h2>
+                <p>Choose policy and market assumptions.</p>
+              </div>
+              <form id="scenario-form" class="scenario-form" aria-label="Scenario controls"></form>
+              <div class="demo-actions">
+                <button id="reset-scenario" type="button" class="btn-secondary">Reset to baseline</button>
+                <a class="btn-secondary" href="index.html">Back to landing page →</a>
+              </div>
+            </article>
+
+            <article class="card demo-results" data-reveal>
+              <div class="demo-card-head">
+                <div class="product-headline">
+                  <img class="voltpilot-logo" src="assets/voltpilot-logo-top-left-final.png" alt="VoltPilot" width="96" height="85" />
+                  <h2>Scenario output</h2>
+                </div>
+                <p id="scenario-label">Awaiting selection.</p>
+              </div>
+
+              <div class="scenario-status" id="scenario-status" role="status" aria-live="polite"></div>
+
+              <div class="result-grid" id="result-grid">
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-env" aria-hidden="true"></span>
+                    <p class="label">CO2 avoided</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">CO2 avoided = baseline grid draw emissions minus VoltPilot grid draw emissions, using the representative hourly carbon profile.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-co2">—</p>
+                  <div class="metric-meter"><span id="meter-co2"></span></div>
+                  <p class="meter-axis"><span id="meter-co2-min">—</span><span id="meter-co2-max">—</span></p>
+                  <p class="result-compare" id="result-co2-compare">—</p>
+                  <p class="result-context" id="result-co2-context">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-env" aria-hidden="true"></span>
+                    <p class="label">Local bill reduction</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Local bill reduction = annual electricity cost saving divided by the baseline electricity spend for the selected site profile.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-local-price">—</p>
+                  <div class="metric-meter"><span id="meter-local-price"></span></div>
+                  <p class="meter-axis"><span id="meter-local-price-min">—</span><span id="meter-local-price-max">—</span></p>
+                  <p class="result-compare" id="result-local-price-compare">—</p>
+                  <p class="result-context" id="result-local-price-context">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-env" aria-hidden="true"></span>
+                    <p class="label">Renewables mix increase</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Renewables mix increase compares baseline hourly grid exposure with VoltPilot charging during higher-renewable periods.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-renewables-mix">—</p>
+                  <div class="metric-meter"><span id="meter-renewables-mix"></span></div>
+                  <p class="meter-axis"><span id="meter-renewables-mix-min">—</span><span id="meter-renewables-mix-max">—</span></p>
+                  <p class="result-compare" id="result-renewables-mix-compare">—</p>
+                  <p class="result-context" id="result-renewables-mix-context">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-env" aria-hidden="true"></span>
+                    <p class="label">Peak demand decrease</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Peak demand decrease (%) = (baseline peak MW - VoltPilot peak MW) / baseline peak MW.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-peak">—</p>
+                  <div class="metric-meter"><span id="meter-peak"></span></div>
+                  <p class="meter-axis"><span id="meter-peak-min">—</span><span id="meter-peak-max">—</span></p>
+                  <p class="result-compare" id="result-peak-compare">—</p>
+                  <p class="result-context" id="result-peak-context">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-env" aria-hidden="true"></span>
+                    <p class="label">Carbon emissions reduction</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Carbon emissions reduction = CO2 avoided divided by baseline annual CO2 emissions.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-carbon-pct">—</p>
+                  <div class="metric-meter"><span id="meter-carbon-pct"></span></div>
+                  <p class="meter-axis"><span id="meter-carbon-pct-min">—</span><span id="meter-carbon-pct-max">—</span></p>
+                  <p class="result-compare" id="result-carbon-pct-compare">—</p>
+                  <p class="result-context" id="result-carbon-pct-context">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-env" aria-hidden="true"></span>
+                    <p class="label">Fossil fuel reduction</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Fossil fuel reduction estimates the shift away from higher-fossil peak periods by comparing baseline and VoltPilot dispatch hours.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-fossil">—</p>
+                  <div class="metric-meter"><span id="meter-fossil"></span></div>
+                  <p class="meter-axis"><span id="meter-fossil-min">—</span><span id="meter-fossil-max">—</span></p>
+                  <p class="result-compare" id="result-fossil-compare">—</p>
+                  <p class="result-context" id="result-fossil-context">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-ops" aria-hidden="true"></span>
+                    <p class="label">Dispatch events</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Dispatch events/year are annualised charge/discharge actions that preserve the selected UPS reserve policy.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-dispatch">—</p>
+                  <p class="result-compare" id="result-dispatch-compare">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-econ" aria-hidden="true"></span>
+                    <p class="label">Annual cost savings</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Cost savings (£/yr) = baseline energy spend - VoltPilot optimized energy spend.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-cost">—</p>
+                  <p class="result-compare" id="result-cost-compare">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-econ" aria-hidden="true"></span>
+                    <p class="label">Annual market revenue</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Market revenue is annualised from discharge MWh during high-value flexibility windows in the representative historic profile.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-revenue">—</p>
+                  <p class="result-compare" id="result-revenue-compare">—</p>
+                </div>
+
+                <div class="result-tile result-tile-accent">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-econ" aria-hidden="true"></span>
+                    <p class="label">Total annual value</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Total annual value (£/yr) = annual cost savings + annual market revenue.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-total">—</p>
+                  <p class="result-compare" id="result-total-compare">—</p>
+                </div>
+
+                <div class="result-tile">
+                  <div class="metric-head">
+                    <span class="metric-badge metric-badge-ops" aria-hidden="true"></span>
+                    <p class="label">Expected uptime</p>
+                    <span class="tooltip-wrap" tabindex="0">?
+                      <span class="tooltip-bubble">Expected uptime (%) reflects reserve policy constraints and fail-safe dispatch guardrails.</span>
+                    </span>
+                  </div>
+                  <p class="result-value" id="result-uptime">—</p>
+                  <p class="result-compare" id="result-uptime-compare">—</p>
+                </div>
+              </div>
+
+              <div class="scenario-summary" id="scenario-summary">Select inputs to view scenario summary.</div>
+            </article>
+          </div>
+
+          <div class="demo-charts" data-reveal>
+            <article class="card chart-block demo-chart-card">
+              <div class="chart-head">
+                <p class="label">Monthly total value profile
+                  <span class="tooltip-wrap" tabindex="0">?
+                    <span class="tooltip-bubble">Monthly bars allocate annual value using winter-weighted historic market seasonality.</span>
+                  </span>
+                </p>
+                <p id="chart-total">—</p>
+              </div>
+              <div id="monthly-chart" class="monthly-chart" aria-label="Monthly scenario value bars"></div>
+            </article>
+
+            <article class="card chart-block demo-chart-card">
+              <div class="chart-head">
+                <p class="label">Daily grid draw comparison
+                  <span class="tooltip-wrap" tabindex="0">?
+                    <span class="tooltip-bubble">Line chart compares baseline site load with VoltPilot grid draw after charging and discharging the battery.</span>
+                  </span>
+                </p>
+                <p id="chart-daily-caption">—</p>
+              </div>
+              <div id="daily-comparison-chart" class="comparison-chart" aria-label="Daily baseline versus VoltPilot grid draw"></div>
+            </article>
+
+            <article class="card chart-block demo-chart-card">
+              <div class="chart-head">
+                <p class="label">System impact comparison
+                  <span class="tooltip-wrap" tabindex="0">?
+                    <span class="tooltip-bubble">Bars compare the independent baseline calculation with the annualised VoltPilot case.</span>
+                  </span>
+                </p>
+                <p id="chart-impact-caption">Baseline vs VoltPilot</p>
+              </div>
+              <div id="impact-comparison-chart" class="impact-chart" aria-label="System impact baseline versus VoltPilot"></div>
+            </article>
+          </div>
+
+          <section class="card model-method" data-reveal aria-labelledby="model-method-title">
+            <div>
+              <p class="label">Model basis</p>
+              <h2 id="model-method-title">Historic data, static demo, transparent assumptions.</h2>
+              <p>
+                The demo is an annualised representative simulation. It compares a baseline datacentre that keeps its
+                UPS battery reserved for backup with a VoltPilot case that preserves the reserve margin, charges during
+                lower-price and lower-carbon renewable-surplus hours, and discharges during higher-price peak hours.
+              </p>
+            </div>
+            <div class="method-grid">
+              <div>
+                <h3>Data layer</h3>
+                <p>Representative 2024-2025 GB market profiles for price, carbon intensity, renewable share, fossil share, demand stress and curtailment signal.</p>
+              </div>
+              <div>
+                <h3>Site layer</h3>
+                <p>Selected site load, battery MW/MWh, reserve percentage, round-trip efficiency and operating mode define available flexibility.</p>
+              </div>
+              <div>
+                <h3>Dispatch layer</h3>
+                <p>VoltPilot charges in cleaner/cheaper windows, discharges in peak windows, and never uses the protected backup reserve.</p>
+              </div>
+              <div>
+                <h3>Important caveat</h3>
+                <p>This is not a quotation or site audit. A real assessment would use half-hourly meter data, contracted tariffs and audited market feeds.</p>
+              </div>
+            </div>
+          </section>
         </div>
       </section>
     </main>
@@ -58,7 +299,7 @@
     <footer class="site-footer">
       <div class="container footer-grid">
         <a href="index.html" class="brand" aria-label="Power Haven home">
-          <img src="assets/logo.svg" alt="Power Haven" width="162" height="28" />
+          <img class="brand-logo" src="assets/powerhaven-logo-blue-final.png" alt="Power Haven" width="138" height="48" />
         </a>
         <p class="footer-mission">Connecting datacentres to the renewable grid.</p>
         <p class="footer-legal">Power Haven is a research-led project at UCL. 2026.</p>
@@ -66,5 +307,6 @@
     </footer>
 
     <script src="js/scroll.js" defer></script>
+    <script src="js/demo-model.js" defer></script>
   </body>
 </html>
