@@ -60,6 +60,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Download repository snapshot
+        run: |
+          curl --fail --location --retry 3 \
+            "https://github.com/${REPOSITORY}/archive/${REVISION}.tar.gz" \
+            --output repo.tar.gz
+          tar -xzf repo.tar.gz --strip-components=1
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REVISION: ${{ github.sha }}
+
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: ./.github/actions/deploy-pages
