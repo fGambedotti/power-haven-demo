@@ -1,0 +1,28 @@
+{
+  "hours": [
+    {"hour":"00:00","dynamicContainment":42,"balancingMechanism":55,"curtailmentMwh":12,"windIndex":71},
+    {"hour":"01:00","dynamicContainment":40,"balancingMechanism":52,"curtailmentMwh":10,"windIndex":69},
+    {"hour":"02:00","dynamicContainment":39,"balancingMechanism":49,"curtailmentMwh":9,"windIndex":66},
+    {"hour":"03:00","dynamicContainment":38,"balancingMechanism":48,"curtailmentMwh":8,"windIndex":64},
+    {"hour":"04:00","dynamicContainment":41,"balancingMechanism":50,"curtailmentMwh":11,"windIndex":67},
+    {"hour":"05:00","dynamicContainment":44,"balancingMechanism":53,"curtailmentMwh":14,"windIndex":72},
+    {"hour":"06:00","dynamicContainment":47,"balancingMechanism":58,"curtailmentMwh":18,"windIndex":78},
+    {"hour":"07:00","dynamicContainment":51,"balancingMechanism":64,"curtailmentMwh":22,"windIndex":83},
+    {"hour":"08:00","dynamicContainment":56,"balancingMechanism":70,"curtailmentMwh":19,"windIndex":81},
+    {"hour":"09:00","dynamicContainment":58,"balancingMechanism":72,"curtailmentMwh":15,"windIndex":76},
+    {"hour":"10:00","dynamicContainment":53,"balancingMechanism":68,"curtailmentMwh":13,"windIndex":73},
+    {"hour":"11:00","dynamicContainment":49,"balancingMechanism":63,"curtailmentMwh":11,"windIndex":70},
+    {"hour":"12:00","dynamicContainment":46,"balancingMechanism":60,"curtailmentMwh":12,"windIndex":72},
+    {"hour":"13:00","dynamicContainment":45,"balancingMechanism":59,"curtailmentMwh":16,"windIndex":77},
+    {"hour":"14:00","dynamicContainment":48,"balancingMechanism":61,"curtailmentMwh":20,"windIndex":82},
+    {"hour":"15:00","dynamicContainment":52,"balancingMechanism":66,"curtailmentMwh":25,"windIndex":88},
+    {"hour":"16:00","dynamicContainment":57,"balancingMechanism":74,"curtailmentMwh":21,"windIndex":84},
+    {"hour":"17:00","dynamicContainment":61,"balancingMechanism":82,"curtailmentMwh":17,"windIndex":79},
+    {"hour":"18:00","dynamicContainment":65,"balancingMechanism":90,"curtailmentMwh":13,"windIndex":74},
+    {"hour":"19:00","dynamicContainment":68,"balancingMechanism":96,"curtailmentMwh":10,"windIndex":68},
+    {"hour":"20:00","dynamicContainment":64,"balancingMechanism":92,"curtailmentMwh":9,"windIndex":65},
+    {"hour":"21:00","dynamicContainment":58,"balancingMechanism":84,"curtailmentMwh":8,"windIndex":62},
+    {"hour":"22:00","dynamicContainment":51,"balancingMechanism":72,"curtailmentMwh":7,"windIndex":60},
+    {"hour":"23:00","dynamicContainment":46,"balancingMechanism":63,"curtailmentMwh":9,"windIndex":64}
+  ]
+}

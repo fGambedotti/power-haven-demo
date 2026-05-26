@@ -1,0 +1,11 @@
+[
+  {"region":"Scotland North","windSpeedMs":11.8,"tempC":5.2,"windForecastIndex":84},
+  {"region":"Scotland South","windSpeedMs":10.4,"tempC":6.1,"windForecastIndex":78},
+  {"region":"North West","windSpeedMs":9.6,"tempC":7.5,"windForecastIndex":73},
+  {"region":"North East","windSpeedMs":8.8,"tempC":6.8,"windForecastIndex":70},
+  {"region":"Midlands","windSpeedMs":6.1,"tempC":8.3,"windForecastIndex":55},
+  {"region":"Wales","windSpeedMs":9.1,"tempC":7.1,"windForecastIndex":72},
+  {"region":"East England","windSpeedMs":7.3,"tempC":8.0,"windForecastIndex":61},
+  {"region":"South West","windSpeedMs":8.7,"tempC":8.2,"windForecastIndex":69},
+  {"region":"South East","windSpeedMs":6.4,"tempC":9.0,"windForecastIndex":52}
+]

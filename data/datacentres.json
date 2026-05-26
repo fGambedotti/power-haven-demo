@@ -1,0 +1,22 @@
+[
+  {"id":"DC-01","name":"Inverness Edge","lat":57.48,"lon":-4.22,"batteryMw":45,"batteryMwh":120,"baselineLoadMw":28,"region":"Scotland North"},
+  {"id":"DC-02","name":"Aberdeen Hub","lat":57.15,"lon":-2.1,"batteryMw":60,"batteryMwh":160,"baselineLoadMw":34,"region":"Scotland North"},
+  {"id":"DC-03","name":"Glasgow Core","lat":55.86,"lon":-4.26,"batteryMw":70,"batteryMwh":200,"baselineLoadMw":40,"region":"Scotland South"},
+  {"id":"DC-04","name":"Edinburgh East","lat":55.95,"lon":-3.18,"batteryMw":55,"batteryMwh":150,"baselineLoadMw":32,"region":"Scotland South"},
+  {"id":"DC-05","name":"Manchester Grid","lat":53.48,"lon":-2.24,"batteryMw":90,"batteryMwh":240,"baselineLoadMw":55,"region":"North West"},
+  {"id":"DC-06","name":"Liverpool Dock","lat":53.41,"lon":-2.99,"batteryMw":65,"batteryMwh":180,"baselineLoadMw":38,"region":"North West"},
+  {"id":"DC-07","name":"Leeds Compute","lat":53.8,"lon":-1.55,"batteryMw":80,"batteryMwh":210,"baselineLoadMw":47,"region":"North East"},
+  {"id":"DC-08","name":"Newcastle Switch","lat":54.97,"lon":-1.62,"batteryMw":50,"batteryMwh":140,"baselineLoadMw":30,"region":"North East"},
+  {"id":"DC-09","name":"Birmingham Stack","lat":52.48,"lon":-1.89,"batteryMw":110,"batteryMwh":280,"baselineLoadMw":64,"region":"Midlands"},
+  {"id":"DC-10","name":"Nottingham Vault","lat":52.95,"lon":-1.15,"batteryMw":75,"batteryMwh":200,"baselineLoadMw":42,"region":"Midlands"},
+  {"id":"DC-11","name":"Cardiff Digital","lat":51.48,"lon":-3.18,"batteryMw":70,"batteryMwh":190,"baselineLoadMw":36,"region":"Wales"},
+  {"id":"DC-12","name":"Swansea Shore","lat":51.62,"lon":-3.95,"batteryMw":55,"batteryMwh":150,"baselineLoadMw":31,"region":"Wales"},
+  {"id":"DC-13","name":"Cambridge AI","lat":52.2,"lon":0.12,"batteryMw":95,"batteryMwh":250,"baselineLoadMw":52,"region":"East England"},
+  {"id":"DC-14","name":"Norwich Cloud","lat":52.63,"lon":1.3,"batteryMw":60,"batteryMwh":170,"baselineLoadMw":35,"region":"East England"},
+  {"id":"DC-15","name":"Bristol Exchange","lat":51.45,"lon":-2.59,"batteryMw":85,"batteryMwh":220,"baselineLoadMw":48,"region":"South West"},
+  {"id":"DC-16","name":"Exeter Edge","lat":50.72,"lon":-3.53,"batteryMw":50,"batteryMwh":140,"baselineLoadMw":29,"region":"South West"},
+  {"id":"DC-17","name":"London Docklands","lat":51.5,"lon":-0.02,"batteryMw":140,"batteryMwh":360,"baselineLoadMw":78,"region":"South East"},
+  {"id":"DC-18","name":"Slough Core","lat":51.51,"lon":-0.6,"batteryMw":130,"batteryMwh":320,"baselineLoadMw":72,"region":"South East"},
+  {"id":"DC-19","name":"Brighton South","lat":50.83,"lon":-0.14,"batteryMw":60,"batteryMwh":160,"baselineLoadMw":33,"region":"South East"},
+  {"id":"DC-20","name":"Canterbury Node","lat":51.28,"lon":1.08,"batteryMw":65,"batteryMwh":175,"baselineLoadMw":37,"region":"South East"}
+]

@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Power Haven builds VoltPilot software that helps datacentres absorb renewable surplus power, trade flexibility, and support a cleaner UK grid."
+    />
+    <title>Power Haven | VoltPilot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+  </head>
+  <body>
+    <header class="site-header" id="top">
+      <div class="container nav-row">
+        <a href="#top" class="brand" aria-label="Power Haven home">
+          <img class="brand-logo" src="assets/powerhaven-logo-blue-final.png" alt="Power Haven" width="152" height="52" />
+        </a>
+
+        <button
+          type="button"
+          class="menu-toggle"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          data-menu-toggle
+        >
+          Menu
+        </button>
+
+        <nav id="site-nav" class="nav-links" aria-label="Primary navigation">
+          <a href="#platform">Platform</a>
+          <a href="#vision">Vision</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="demo.html">Demo</a>
+        </nav>
+
+        <a href="#contact" class="btn-primary nav-cta">Get Early Access</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="section hero" aria-labelledby="hero-title">
+        <div class="container hero-grid">
+          <div class="hero-copy" data-reveal>
+            <h1 id="hero-title" class="hero-title">
+              <span class="headline-line"><span class="headline-clip">AI is scaling. The grid isn't. We fix that.</span></span>
+              <span class="headline-line headline-italic"><span class="headline-clip">Unlock climate-friendly datacentre through our flexibility solutions</span></span>
+            </h1>
+            <p class="hero-subhead">
+              VoltPilot connects datacentre batteries to the electricity market — buying renewable power cheaply,
+              selling flexibility profitably, and making the grid cleaner in the process.
+            </p>
+            <p class="hero-credential">Research-led. Built in collaboration with NESO. Pre-seed stage, 2026.</p>
+            <div class="hero-actions">
+              <a href="#how-it-works" class="btn-primary">See how it works</a>
+              <a href="demo.html" class="btn-secondary">Open the model →</a>
+            </div>
+            <p class="hero-stat">
+              <span>10.2 TWh</span> of renewable electricity was curtailed in Britain in 2025. Wasted. Enough to
+              power every datacentre in the country for a year.
+            </p>
+          </div>
+
+          <div class="hero-chart-wrap" data-reveal data-chart-reveal>
+            <p class="chart-inline-note">
+              Illustrative half-hourly market profile
+              <span class="tooltip-wrap" tabindex="0">?
+                <span class="tooltip-bubble">Chart is a modeled daily profile used to explain the dispatch logic, not a direct market feed screenshot.</span>
+              </span>
+            </p>
+            <svg
+              id="hero-market-chart"
+              class="hero-chart"
+              viewBox="0 0 620 430"
+              role="img"
+              aria-label="Half-hourly wholesale electricity price and renewable generation intensity over 24 hours with ideal battery charge and discharge windows"
+            ></svg>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-alt" aria-labelledby="problem-title">
+        <div class="container narrow">
+          <h2 id="problem-title" class="section-title" data-reveal>Two systems that should work together — but don't.</h2>
+
+          <div class="problem-stats" data-reveal data-stagger-group>
+            <p>
+              10.2 TWh wasted / 2025 GB renewable curtailment
+              <span class="tooltip-wrap" tabindex="0">?
+                <span class="tooltip-bubble">Defined as constrained renewable electricity that could not be delivered to demand.</span>
+              </span>
+            </p>
+            <p>
+              £1 billion+ / paid to generators to switch off
+              <span class="tooltip-wrap" tabindex="0">?
+                <span class="tooltip-bubble">Constraint payments are modeled as system balancing costs socialized through the market.</span>
+              </span>
+            </p>
+            <p>
+              47% / share of UK electricity from renewables in 2025
+              <span class="tooltip-wrap" tabindex="0">?
+                <span class="tooltip-bubble">Renewables share shown as annual percentage of total electricity generation mix.</span>
+              </span>
+            </p>
+          </div>
+
+          <div class="prose" data-reveal data-stagger-group>
+            <article>
+              <h3>The grid's problem</h3>
+              <p>
+                Britain's wind and solar capacity is growing faster than the grid can carry the power. In 2025, over
+                £1 billion was paid to generators to switch off turbines. The electricity existed. The demand existed.
+                The infrastructure to connect them did not.
+              </p>
+            </article>
+            <article>
+              <h3>The datacentre's problem</h3>
+              <p>
+                Datacentres are buying electricity at whatever price the market charges, at whatever time they need it.
+                The batteries already on site — UPS systems, backup power — sit fully charged and idle, waiting for a
+                grid failure that statistically almost never comes. They are an energy asset being used as insurance.
+              </p>
+            </article>
+            <article>
+              <h3>The link nobody has made</h3>
+              <p>
+                A datacentre that charges its batteries during a renewable surplus and discharges during a peak is
+                performing exactly the function the grid is paying billions to avoid needing. The market exists. The
+                infrastructure exists. The software to connect them has not, until now.
+              </p>
+            </article>
+          </div>
+
+          <div class="problem-diagram" data-reveal>
+            <article>
+              <p class="label">Renewable surplus</p>
+              <svg viewBox="0 0 320 124" aria-hidden="true">
+                <path d="M10 96 C60 74 92 38 144 22 C192 8 235 14 310 20" class="line line-one" />
+                <line x1="10" y1="104" x2="310" y2="104" class="axis" />
+                <text x="16" y="118">Price dips negative</text>
+              </svg>
+            </article>
+            <article>
+              <p class="label">Battery response</p>
+              <svg viewBox="0 0 320 124" aria-hidden="true">
+                <path d="M10 86 C72 86 92 48 158 48 C222 48 244 82 310 82" class="line line-two" />
+                <line x1="10" y1="104" x2="310" y2="104" class="axis" />
+                <text x="16" y="118">Dispatch smooths peaks</text>
+              </svg>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="section" aria-labelledby="how-title">
+        <div class="container">
+          <h2 id="how-title" class="section-title" data-reveal>Software that turns your batteries into a trading desk.</h2>
+          <p class="section-lead" data-reveal>
+            VoltPilot operates entirely on the energy side of your operation. It never touches compute, never adjusts
+            workloads, never affects uptime.
+          </p>
+          <p class="section-note" data-reveal>No new hardware. No operational risk. Software only.</p>
+
+          <div class="three-col" data-reveal data-stagger-group>
+            <article class="card">
+              <p class="label">1. Learns your site</p>
+              <p>
+                VoltPilot ingests your historical consumption patterns, battery specifications, and site constraints. It
+                builds a model of your flexibility — how much you can shift, for how long, within your operational
+                limits.
+              </p>
+            </article>
+            <article class="card">
+              <p class="label">2. Reads the market</p>
+              <p>
+                The platform monitors half-hourly electricity prices, renewable generation forecasts, and NESO
+                flexibility market signals in real time. It identifies the windows where buying power is cheapest and
+                where selling flexibility pays most.
+              </p>
+            </article>
+            <article class="card">
+              <p class="label">3. Acts automatically</p>
+              <p>
+                VoltPilot schedules battery charge and discharge cycles to minimise your electricity costs, enters bids
+                into NESO markets when the opportunity warrants, and generates auditable reports on every action taken.
+                You approve the strategy. The system executes it.
+              </p>
+            </article>
+          </div>
+
+          <p class="network-note" data-reveal>
+            Connected across multiple sites, VoltPilot creates something no single datacentre can access alone: a
+            virtual power plant. Power Haven manages this aggregation without exchanging any operational or commercial
+            data between operators.
+          </p>
+        </div>
+      </section>
+
+      <section id="platform" class="section section-alt" aria-labelledby="gain-title">
+        <div class="container">
+          <h2 id="gain-title" class="section-title" data-reveal>
+            The same infrastructure. A fundamentally different relationship with energy.
+          </h2>
+
+          <div class="two-col" data-reveal data-stagger-group>
+            <article class="card tone-light">
+              <h3>Commercial</h3>
+              <p>Lower electricity costs through renewable arbitrage and forward purchasing.</p>
+              <p>Revenue from NESO flexibility market participation across Dynamic Containment, Dynamic Moderation, and the Balancing Mechanism.</p>
+              <p>Reduced exposure to wholesale price volatility.</p>
+              <p>Stronger sustainability credentials for Scope 2 reporting and enterprise customer requirements.</p>
+            </article>
+            <article class="card tone-light">
+              <h3>Systemic</h3>
+              <p>Direct contribution to renewable energy integration in Britain.</p>
+              <p>Reduced need for gas peaking generation during demand peaks.</p>
+              <p>Lower constraint payments passed to consumers through energy bills.</p>
+              <p>Participation in the transition to a genuinely flexible, low-carbon grid.</p>
+            </article>
+          </div>
+
+          <p class="mission-line" data-reveal>
+            Datacentres are not the problem. Datacentres that do not participate are the problem. VoltPilot makes
+            participation effortless.
+          </p>
+        </div>
+      </section>
+
+      <section id="vision" class="section section-dark" aria-labelledby="vision-title">
+        <div class="container narrow">
+          <h2 id="vision-title" class="section-title" data-reveal>Where we are going.</h2>
+          <p data-reveal>
+            Today, VoltPilot is software. It connects existing batteries to existing markets and makes both work
+            better. That is the immediate value, and it is real.
+          </p>
+          <p data-reveal>
+            But the infrastructure problem runs deeper than trading strategy. Power Haven's long-term purpose is to
+            develop co-located renewable generation and battery assets at or near datacentre sites — creating
+            infrastructure that is genuinely self-sufficient and genuinely grid-positive.
+          </p>
+
+          <div class="milestones" data-reveal data-stagger-group>
+            <article class="card dark-card">
+              <p class="label">Now</p>
+              <p>
+                Software platform connecting existing on-site batteries to UK electricity markets. Automated trading.
+                NESO market participation. Multi-site aggregation.
+              </p>
+            </article>
+            <article class="card dark-card">
+              <p class="label">Next</p>
+              <p>
+                Co-developed battery infrastructure at partner sites, expanding the flexibility pool and improving
+                market participation economics for both Power Haven and the operator.
+              </p>
+            </article>
+            <article class="card dark-card">
+              <p class="label">Future</p>
+              <p>
+                Renewable generation assets — solar, wind — developed in proximity to datacentre clusters, creating a
+                direct supply relationship between clean generation and digital demand.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="credentials-title">
+        <div class="container narrow">
+          <h2 id="credentials-title" class="section-title" data-reveal>Built on research. Grounded in the market.</h2>
+
+          <div class="credentials" data-reveal data-stagger-group>
+            <article>
+              <h3>UCL</h3>
+              <p>
+                VoltPilot was developed through five years of doctoral research at University College London into
+                flexibility markets and the grid integration of demand-side assets. The academic foundation is not a
+                marketing claim — it is the reason the trading models work.
+              </p>
+            </article>
+            <article>
+              <h3>NESO</h3>
+              <p>
+                The platform has been developed in active technical dialogue with the National Energy System Operator.
+                The flexibility markets we participate in are the same ones NESO is expanding toward a 12 GW
+                consumer-led flexibility target by 2030.
+              </p>
+            </article>
+            <article>
+              <h3>Siemens Energy</h3>
+              <p>Industry mentorship and technical validation through Siemens Energy's UK programme.</p>
+            </article>
+          </div>
+
+          <div class="logo-row" data-reveal aria-label="Affiliations">
+            <img src="assets/ucl-logo.svg" alt="UCL" width="104" height="30" loading="lazy" />
+            <img src="assets/siemens-energy-logo.svg" alt="Siemens Energy" width="170" height="30" loading="lazy" />
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="section section-alt" aria-labelledby="contact-title">
+        <div class="container narrow contact">
+          <h2 id="contact-title" class="section-title" data-reveal>If your site has batteries, we should talk.</h2>
+          <p data-reveal>
+            We are running a limited early access programme with UK datacentre operators. If you have on-site
+            batteries or UPS infrastructure, we offer a no-obligation flexibility assessment — a modelled estimate of
+            your potential savings and market revenue based on your consumption profile.
+          </p>
+          <div class="contact-actions" data-reveal>
+            <a href="mailto:hello@powerhaven.io?subject=Flexibility%20Assessment" class="btn-primary">
+              Request a flexibility assessment
+            </a>
+            <a href="mailto:hello@powerhaven.io" class="btn-secondary">hello@powerhaven.io</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <a href="#top" class="brand" aria-label="Power Haven home">
+          <img class="brand-logo" src="assets/powerhaven-logo-blue-final.png" alt="Power Haven" width="138" height="48" />
+        </a>
+        <nav class="footer-nav" aria-label="Footer links">
+          <a href="#platform">Platform</a>
+          <a href="demo.html">Demo</a>
+          <a href="#vision">Vision</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <p class="footer-mission">Connecting datacentres to the renewable grid.</p>
+        <p class="footer-legal">Power Haven is a research-led project at UCL. 2026.</p>
+        <div class="footer-affiliations" aria-label="Affiliations">
+          <img src="assets/ucl-logo.svg" alt="UCL" width="88" height="26" loading="lazy" />
+          <img src="assets/siemens-energy-logo.svg" alt="Siemens Energy" width="144" height="26" loading="lazy" />
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/chart.js" defer></script>
+    <script src="js/scroll.js" defer></script>
+  </body>
+</html>

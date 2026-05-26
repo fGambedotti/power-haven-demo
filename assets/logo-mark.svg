@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="ph-logo-gradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00C4A0" />
+      <stop offset="1" stop-color="#0097C4" />
+    </linearGradient>
+  </defs>
+  <path d="M32 8L51.8 19.4V42.6L32 54L12.2 42.6V19.4L32 8Z" stroke="url(#ph-logo-gradient)" stroke-opacity="0.62" stroke-width="3" />
+  <path d="M32 18L43.3 24.5V37.5L32 44L20.7 37.5V24.5L32 18Z" fill="url(#ph-logo-gradient)" />
+  <path d="M52 20L60 15" stroke="url(#ph-logo-gradient)" stroke-opacity="0.62" stroke-width="3" stroke-linecap="round" />
+  <path d="M12 32H3" stroke="url(#ph-logo-gradient)" stroke-opacity="0.62" stroke-width="3" stroke-linecap="round" />
+  <path d="M43.7 44.8L48.5 53" stroke="url(#ph-logo-gradient)" stroke-opacity="0.62" stroke-width="3" stroke-linecap="round" />
+</svg>

@@ -1,0 +1,17 @@
+[
+  {"id":"GEN-01","name":"Moray Wind","type":"renewable","capacityMw":320,"lat":57.5,"lon":-3.2},
+  {"id":"GEN-02","name":"Pentland Tidal","type":"renewable","capacityMw":120,"lat":58.6,"lon":-3.1},
+  {"id":"GEN-03","name":"Ayrshire Offshore","type":"renewable","capacityMw":280,"lat":55.4,"lon":-4.7},
+  {"id":"GEN-04","name":"Teesside CCGT","type":"non-renewable","capacityMw":950,"lat":54.6,"lon":-1.3},
+  {"id":"GEN-05","name":"Humber Biomass","type":"renewable","capacityMw":420,"lat":53.7,"lon":-0.4},
+  {"id":"GEN-06","name":"Peak District Hydro","type":"renewable","capacityMw":90,"lat":53.2,"lon":-1.7},
+  {"id":"GEN-07","name":"Fens Solar","type":"renewable","capacityMw":240,"lat":52.6,"lon":0.2},
+  {"id":"GEN-08","name":"Severn Gas","type":"non-renewable","capacityMw":720,"lat":51.6,"lon":-2.6},
+  {"id":"GEN-09","name":"Pembroke CCGT","type":"non-renewable","capacityMw":850,"lat":51.7,"lon":-4.9},
+  {"id":"GEN-10","name":"Cornwall Wind","type":"renewable","capacityMw":160,"lat":50.4,"lon":-4.9},
+  {"id":"GEN-11","name":"Sussex Solar","type":"renewable","capacityMw":200,"lat":50.9,"lon":-0.1},
+  {"id":"GEN-12","name":"Kent Flex CHP","type":"non-renewable","capacityMw":500,"lat":51.3,"lon":0.8},
+  {"id":"GEN-13","name":"Nottingham Gas","type":"non-renewable","capacityMw":620,"lat":52.9,"lon":-1.1},
+  {"id":"GEN-14","name":"Lancs Wind","type":"renewable","capacityMw":230,"lat":54.1,"lon":-2.9},
+  {"id":"GEN-15","name":"Tyne Battery","type":"renewable","capacityMw":110,"lat":54.9,"lon":-1.4}
+]
