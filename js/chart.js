@@ -137,14 +137,14 @@
     cx: String(chargeMarkerX),
     cy: String(chargeMarkerY),
     r: '4',
-    fill: '#2d6a4f'
+    fill: '#1f3f66'
   });
 
   var dischargeDot = createNode('circle', {
     cx: String(dischargeMarkerX),
     cy: String(dischargeMarkerY),
     r: '4',
-    fill: '#2d6a4f'
+    fill: '#1f3f66'
   });
 
   function label(text, xPos, yPos, opts) {
@@ -185,38 +185,61 @@
     svg.appendChild(tickLabel);
   });
 
-  label('24-hour wholesale price and renewable generation rhythm', pad.left, 18, {
-    color: '#1c1c1a',
-    size: '14',
-    serif: true
-  });
+  var topAnnotationY = pad.top + 52;
 
-  label('Wind + solar peak', x(9.4), yRenewable(data[20].renewable) - 14, {
+  label('Wind + solar peak', x(8.2), topAnnotationY, {
     serif: true,
     color: '#4f4b45',
-    size: '13'
+    size: '12',
+    anchor: 'middle'
   });
 
   label('Battery charges here', chargeMarkerX + 8, chargeMarkerY - 8, {
     serif: true,
-    color: '#2d6a4f',
+    color: '#1f3f66',
     size: '13'
   });
 
-  label('Grid needs balancing here', dischargeMarkerX - 10, dischargeMarkerY - 14, {
+  label('Grid needs balancing here', x(17.4), topAnnotationY + 18, {
     serif: true,
-    anchor: 'end',
+    anchor: 'middle',
     color: '#4f4b45',
-    size: '13'
+    size: '12'
   });
 
-  label('Wholesale price (£/MWh)', width - pad.right - 10, yPrice(data[46].price) - 10, {
+  var legendX2 = width - pad.right - 10;
+  var legendX1 = legendX2 - 22;
+  var legendTop = pad.top + 16;
+
+  svg.appendChild(
+    createNode('line', {
+      x1: String(legendX1),
+      y1: String(legendTop),
+      x2: String(legendX2),
+      y2: String(legendTop),
+      stroke: '#506070',
+      'stroke-width': '2'
+    })
+  );
+
+  label('Wholesale price (£/MWh)', legendX2, legendTop + 4, {
     anchor: 'end',
     color: '#506070',
     size: '12'
   });
 
-  label('Renewable generation (GW)', width - pad.right - 10, yRenewable(data[44].renewable) + 18, {
+  svg.appendChild(
+    createNode('line', {
+      x1: String(legendX1),
+      y1: String(legendTop + 22),
+      x2: String(legendX2),
+      y2: String(legendTop + 22),
+      stroke: '#8c877e',
+      'stroke-width': '2'
+    })
+  );
+
+  label('Renewable generation (GW)', legendX2, legendTop + 26, {
     anchor: 'end',
     color: '#8c877e',
     size: '12'

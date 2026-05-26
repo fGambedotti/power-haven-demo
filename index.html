@@ -20,7 +20,7 @@
     <header class="site-header" id="top">
       <div class="container nav-row">
         <a href="#top" class="brand" aria-label="Power Haven home">
-          <img src="assets/logo.svg" alt="Power Haven" width="162" height="28" />
+          <img class="brand-logo" src="assets/powerhaven-logo-blue-final.png" alt="Power Haven" width="152" height="52" />
         </a>
 
         <button
@@ -49,8 +49,8 @@
         <div class="container hero-grid">
           <div class="hero-copy" data-reveal>
             <h1 id="hero-title" class="hero-title">
-              <span class="headline-line"><span class="headline-clip">Britain is generating clean electricity it cannot use.</span></span>
-              <span class="headline-line headline-italic"><span class="headline-clip">Your batteries could catch it.</span></span>
+              <span class="headline-line"><span class="headline-clip">AI is scaling. The grid isn't. We fix that.</span></span>
+              <span class="headline-line headline-italic"><span class="headline-clip">Unlock climate-friendly datacentre through our flexibility solutions</span></span>
             </h1>
             <p class="hero-subhead">
               VoltPilot connects datacentre batteries to the electricity market — buying renewable power cheaply,
@@ -68,6 +68,12 @@
           </div>
 
           <div class="hero-chart-wrap" data-reveal data-chart-reveal>
+            <p class="chart-inline-note">
+              Illustrative half-hourly market profile
+              <span class="tooltip-wrap" tabindex="0">?
+                <span class="tooltip-bubble">Chart is a modeled daily profile used to explain the dispatch logic, not a direct market feed screenshot.</span>
+              </span>
+            </p>
             <svg
               id="hero-market-chart"
               class="hero-chart"
@@ -84,9 +90,24 @@
           <h2 id="problem-title" class="section-title" data-reveal>Two systems that should work together — but don't.</h2>
 
           <div class="problem-stats" data-reveal data-stagger-group>
-            <p>10.2 TWh wasted / 2025 GB renewable curtailment</p>
-            <p>£1 billion+ / paid to generators to switch off</p>
-            <p>47% / share of UK electricity from renewables in 2025</p>
+            <p>
+              10.2 TWh wasted / 2025 GB renewable curtailment
+              <span class="tooltip-wrap" tabindex="0">?
+                <span class="tooltip-bubble">Defined as constrained renewable electricity that could not be delivered to demand.</span>
+              </span>
+            </p>
+            <p>
+              £1 billion+ / paid to generators to switch off
+              <span class="tooltip-wrap" tabindex="0">?
+                <span class="tooltip-bubble">Constraint payments are modeled as system balancing costs socialized through the market.</span>
+              </span>
+            </p>
+            <p>
+              47% / share of UK electricity from renewables in 2025
+              <span class="tooltip-wrap" tabindex="0">?
+                <span class="tooltip-bubble">Renewables share shown as annual percentage of total electricity generation mix.</span>
+              </span>
+            </p>
           </div>
 
           <div class="prose" data-reveal data-stagger-group>
@@ -305,7 +326,7 @@
     <footer class="site-footer">
       <div class="container footer-grid">
         <a href="#top" class="brand" aria-label="Power Haven home">
-          <img src="assets/logo.svg" alt="Power Haven" width="162" height="28" />
+          <img class="brand-logo" src="assets/powerhaven-logo-blue-final.png" alt="Power Haven" width="138" height="48" />
         </a>
         <nav class="footer-nav" aria-label="Footer links">
           <a href="#platform">Platform</a>

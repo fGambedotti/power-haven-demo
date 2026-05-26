@@ -21,27 +21,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build static site
-        env:
-          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
-        run: npm run build
-
-      - name: Ensure nojekyll
-        run: touch out/.nojekyll
+      - name: Assemble static artifact
+        run: |
+          mkdir -p site-dist
+          cp index.html demo.html site-dist/
+          cp -R css js assets data site-dist/
+          touch site-dist/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ./site-dist
 
   deploy:
     environment:
